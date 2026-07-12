@@ -31,7 +31,23 @@ function getCurrentApiKey() {
   }
   
   const key = ALL_API_KEYS[currentKeyIndex]
-  console.log(`🔑 Using API Key #${currentKeyIndex + 1}/${ALL_API_KEYS.length}`)
+  
+  // Debug log untuk production build
+  if (!key) {
+    console.warn('⚠️ No API key available', {
+      currentKeyIndex,
+      totalKeys: ALL_API_KEYS.length,
+      PRIMARY_API_KEY_exists: !!PRIMARY_API_KEY,
+      envCheck: {
+        VITE_GEMINI_API_KEY: import.meta.env.VITE_GEMINI_API_KEY ? 'set' : 'missing'
+      }
+    })
+    // Return empty string instead of undefined to prevent fetch errors
+    return ''
+  } else {
+    console.log(`🔑 Using API Key #${currentKeyIndex + 1}/${ALL_API_KEYS.length}:`, key.substring(0, 15) + '...')
+  }
+  
   return key
 }
 

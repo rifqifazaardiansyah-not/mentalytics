@@ -41,29 +41,44 @@ npm run dev
 
 ## 🌐 Deployment
 
-### Deploy ke Production
+### 🚀 Ready to Deploy!
 
-Aplikasi ini siap dideploy ke **Vercel** (recommended) atau platform hosting lain.
+Mentalytics siap dideploy ke production dengan **zero cost** menggunakan free tier Vercel + Supabase.
 
-**Quick Deploy:**
+**⚡ Quick Deploy (15 menit):**
 
-1. Push ke GitHub:
 ```bash
-git init
-git add .
-git commit -m "Initial commit"
-git push origin main
+# 1. Verify readiness
+node verify-deployment-ready.js
+
+# 2. Push to GitHub
+git init && git add . && git commit -m "ready for deployment"
+gh repo create mentalytics --public --source=. --push
+
+# 3. Deploy to Vercel (via dashboard)
+# Open https://vercel.com → Import repo → Add env vars → Deploy
 ```
 
-2. Deploy ke Vercel:
-   - Buka https://vercel.com
-   - Import repository dari GitHub
-   - Tambahkan environment variables
-   - Deploy!
+### 📚 Complete Deployment Documentation
 
-**Dokumentasi lengkap:** Lihat `DEPLOYMENT_GUIDE.md` untuk step-by-step deployment instructions.
+Pilih dokumentasi sesuai kebutuhan:
 
-**Quick reference:** Lihat `deploy.md` untuk command-line deployment guide.
+| Document | Purpose | Time | Start Here? |
+|----------|---------|------|-------------|
+| 📖 [`README_DEPLOYMENT.md`](./README_DEPLOYMENT.md) | **Navigation hub** - Overview semua docs | 5 min | ✅ **Start here** |
+| ⚡ [`QUICK_START.md`](./QUICK_START.md) | Fast deployment guide | 15 min | For immediate deploy |
+| 📘 [`DEPLOYMENT_GUIDE.md`](./DEPLOYMENT_GUIDE.md) | Comprehensive guide | 30 min | For full understanding |
+| 💻 [`deploy.md`](./deploy.md) | CLI command reference | 10 min | For terminal users |
+| ✅ [`PRE_DEPLOYMENT_CHECKLIST.md`](./PRE_DEPLOYMENT_CHECKLIST.md) | Verification checklist | 15 min | Before deploying |
+| 📊 [`DEPLOYMENT_SUMMARY.md`](./DEPLOYMENT_SUMMARY.md) | Architecture & costs | 15 min | For stakeholders |
+| 🎯 [`EXECUTIVE_SUMMARY.md`](./EXECUTIVE_SUMMARY.md) | Business overview | 10 min | For management |
+
+**Automated Verification:**
+```bash
+node verify-deployment-ready.js  # 45+ automated checks
+```
+
+**Cost:** $0/month (free tier cukup untuk 200-500 daily active users)
 
 ## 📁 Project Structure
 
