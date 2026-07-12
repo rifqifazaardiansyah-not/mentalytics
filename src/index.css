@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Color tokens from design.md */
+  --color-primary-100: #d4edf6;
+  --color-primary-200: #c4f0ed;
+  --color-primary-300: #c9f4e4;
+  --color-primary-400: #bef4d5;
+  --color-primary-500: #b2f2c3;
+  --color-primary-600: #7fd9a8;
+  --color-primary-700: #4fb583;
+  
+  --color-ink-900: #1f2d28;
+  --color-ink-600: #4b5f58;
+  --color-surface: #ffffff;
+  --color-bg: #f6fcf9;
+  
+  --color-warning: #f6c453;
+  --color-danger: #e57373;
+  --color-info: #7cc4e8;
+  
+  --color-highlight-self: #bef4d5;
+  --color-highlight-border: #4fb583;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-ink-900);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+}
+
+@layer utilities {
+  .text-milo {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+  }
+}
