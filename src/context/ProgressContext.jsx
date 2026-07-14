@@ -38,29 +38,29 @@ export function ProgressProvider({ children }) {
       const progress = []
 
       // Check if EQ answered - this is the main milestone
-      const { data: eqData } = await supabase
+      const { data: eqData, error: eqError } = await supabase
         .from('essential_question_answers')
         .select('id')
         .eq('siswa_id', studentId)
-        .single()
+        .maybeSingle()
       
-      if (eqData) {
+      if (eqData && !eqError) {
         // If EQ answered, user has completed: CP → TP → Big Idea
         progress.push('cp', 'tp', 'big-idea')
       }
 
       // Check if survey completed
-      const { data: surveyData } = await supabase
+      const { data: surveyData, error: surveyError } = await supabase
         .from('survey_results')
         .select('id')
         .eq('siswa_id', studentId)
-        .single()
+        .maybeSingle()
       
-      if (surveyData) {
+      if (surveyData && !surveyError) {
         // If survey done, user has completed forum and the-challenge steps
         if (!progress.includes('forum-diskusi')) progress.push('forum-diskusi')
         progress.push('the-challenge', 'guiding-resource', 'transisi', 'survey', 'hasil-survey')
-      } else if (eqData) {
+      } else if (eqData && !eqError) {
         // If only EQ done (no survey yet), forum is accessible
         progress.push('forum-diskusi')
       }
@@ -77,13 +77,13 @@ export function ProgressProvider({ children }) {
       }
 
       // Check if solution submitted
-      const { data: solutionData } = await supabase
+      const { data: solutionData, error: solutionError } = await supabase
         .from('solutions')
         .select('id')
         .eq('siswa_id', studentId)
-        .single()
+        .maybeSingle()
       
-      if (solutionData) {
+      if (solutionData && !solutionError) {
         progress.push('solution', 'hasil-tes')
       }
 
