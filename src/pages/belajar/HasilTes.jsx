@@ -81,9 +81,9 @@ INSTRUKSI:
           .eq('halaman', 'hasil_tes')
           .order('created_at', { ascending: false })
           .limit(1)
-          .single()
+          .maybeSingle()
         
-        if (existingAI && existingAI.response) {
+        if (existingAI && existingAI.response && !aiError) {
           // Use existing recommendation
           console.log('📌 Using existing AI recommendation')
           setAiRecommendation(existingAI.response)
