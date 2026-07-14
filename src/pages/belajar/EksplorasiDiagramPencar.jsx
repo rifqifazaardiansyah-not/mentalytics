@@ -56,77 +56,111 @@ export default function EksplorasiDiagramPencar() {
   const chartHeight = 600
   const padding = 60
 
-  // Get siswa_id for localStorage
-  const getSiswaId = () => {
+  // Database functions for progress persistence
+  const saveProgressToDB = async () => {
     try {
-      const stored = localStorage.getItem('mentalytics_student_id')
-      if (stored) return stored
-    } catch (e) {
-      console.error('Error getting siswa_id:', e)
-    }
-    return 'guest'
-  }
-
-  const siswaId = getSiswaId()
-
-  // LocalStorage functions
-  const getStorageKey = (key) => `${key}_${siswaId}`
-
-  const saveProgressToStorage = () => {
-    try {
-      const progress = {
-        currentStep,
-        xAxisVar,
-        yAxisVar,
-        xScale,
-        yScale,
-        inputtedPoints,
-        currentInputIndex,
-        regressionLine,
-        correlationScore,
-        checkedRows,
-        timestamp: Date.now()
+      const siswaId = localStorage.getItem('mentalytics_student_id')
+      if (!siswaId || !kelasId) {
+        console.warn('Cannot save progress: missing siswaId or kelasId')
+        return
       }
-      localStorage.setItem(getStorageKey('eksplorasi_diagram_progress'), JSON.stringify(progress))
+
+      const progressData = {
+        siswa_id: siswaId,
+        kelas_id: kelasId,
+        current_step: currentStep,
+        x_axis_var: xAxisVar,
+        y_axis_var: yAxisVar,
+        x_scale: xScale,
+        y_scale: yScale,
+        inputted_points: inputtedPoints,
+        current_input_index: currentInputIndex,
+        regression_line: regressionLine,
+        correlation_score: correlationScore,
+        checked_rows: checkedRows,
+        updated_at: new Date().toISOString()
+      }
+
+      // Upsert: insert or update if already exists
+      const { error } = await supabase
+        .from('eksplorasi_diagram_progress')
+        .upsert(progressData, {
+          onConflict: 'siswa_id,kelas_id'
+        })
+
+      if (error) {
+        console.error('Error saving progress to DB:', error)
+      } else {
+        console.log('✅ Progress saved to database')
+      }
     } catch (e) {
-      console.error('Error saving progress:', e)
+      console.error('Error in saveProgressToDB:', e)
     }
   }
 
-  const loadProgressFromStorage = () => {
+  const loadProgressFromDB = async () => {
     try {
-      const saved = localStorage.getItem(getStorageKey('eksplorasi_diagram_progress'))
-      if (saved) {
-        const progress = JSON.parse(saved)
-        console.log('📂 Loading progress:', progress)
-        
-        // Load any saved progress (not just step 4)
-        if (progress.currentStep >= 1) {
-          setCurrentStep(progress.currentStep)
-          if (progress.xAxisVar) setXAxisVar(progress.xAxisVar)
-          if (progress.yAxisVar) setYAxisVar(progress.yAxisVar)
-          if (progress.xScale) setXScale(progress.xScale)
-          if (progress.yScale) setYScale(progress.yScale)
-          if (progress.inputtedPoints) setInputtedPoints(progress.inputtedPoints)
-          if (progress.currentInputIndex !== undefined) setCurrentInputIndex(progress.currentInputIndex)
-          if (progress.regressionLine) setRegressionLine(progress.regressionLine)
-          if (progress.correlationScore !== undefined) setCorrelationScore(progress.correlationScore)
-          if (progress.checkedRows) setCheckedRows(progress.checkedRows)
-          return true
+      const siswaId = localStorage.getItem('mentalytics_student_id')
+      if (!siswaId || !kelasId) {
+        console.warn('Cannot load progress: missing siswaId or kelasId')
+        return false
+      }
+
+      const { data, error } = await supabase
+        .from('eksplorasi_diagram_progress')
+        .select('*')
+        .eq('siswa_id', siswaId)
+        .eq('kelas_id', kelasId)
+        .single()
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No data found - this is normal for first time users
+          console.log('📝 No saved progress found (starting fresh)')
+        } else {
+          console.error('Error loading progress from DB:', error)
         }
+        return false
+      }
+
+      if (data && data.current_step >= 1) {
+        console.log('📂 Loading progress from database:', data)
+        setCurrentStep(data.current_step)
+        if (data.x_axis_var) setXAxisVar(data.x_axis_var)
+        if (data.y_axis_var) setYAxisVar(data.y_axis_var)
+        if (data.x_scale) setXScale(data.x_scale)
+        if (data.y_scale) setYScale(data.y_scale)
+        if (data.inputted_points) setInputtedPoints(data.inputted_points)
+        if (data.current_input_index !== undefined) setCurrentInputIndex(data.current_input_index)
+        if (data.regression_line) setRegressionLine(data.regression_line)
+        if (data.correlation_score !== undefined) setCorrelationScore(data.correlation_score)
+        if (data.checked_rows) setCheckedRows(data.checked_rows)
+        return true
       }
     } catch (e) {
-      console.error('Error loading progress:', e)
+      console.error('Error in loadProgressFromDB:', e)
     }
     return false
   }
 
-  const clearProgressFromStorage = () => {
+  const clearProgressFromDB = async () => {
     try {
-      localStorage.removeItem(getStorageKey('eksplorasi_diagram_progress'))
-      console.log('🗑️ Progress cleared')
+      const siswaId = localStorage.getItem('mentalytics_student_id')
+      if (!siswaId || !kelasId) return
+
+      const { error } = await supabase
+        .from('eksplorasi_diagram_progress')
+        .delete()
+        .eq('siswa_id', siswaId)
+        .eq('kelas_id', kelasId)
+
+      if (error) {
+        console.error('Error clearing progress from DB:', error)
+      } else {
+        console.log('🗑️ Progress cleared from database')
+      }
     } catch (e) {
-      console.error('Error clearing progress:', e)
+      console.error('Error in clearProgressFromDB:', e)
     }
   }
 
@@ -172,8 +206,8 @@ export default function EksplorasiDiagramPencar() {
 
         setSurveyData(formattedData)
         
-        // Load saved progress
-        loadProgressFromStorage()
+        // Load saved progress from database
+        await loadProgressFromDB()
         
       } catch (err) {
         console.error('Error:', err)
@@ -186,12 +220,17 @@ export default function EksplorasiDiagramPencar() {
     fetchSurveyData()
   }, [kelasId])
 
-  // Save progress realtime on any change
+  // Save progress realtime on any change to database
   useEffect(() => {
-    if (currentStep >= 2) {
-      saveProgressToStorage()
+    if (currentStep >= 2 && kelasId) {
+      // Debounce save to avoid too many DB writes
+      const timeoutId = setTimeout(() => {
+        saveProgressToDB()
+      }, 1000) // Save after 1 second of inactivity
+      
+      return () => clearTimeout(timeoutId)
     }
-  }, [currentStep, inputtedPoints, regressionLine, correlationScore, checkedRows])
+  }, [currentStep, inputtedPoints, regressionLine, correlationScore, checkedRows, kelasId])
 
   // Auto-navigate to the correct page when inputting data
   useEffect(() => {
@@ -384,7 +423,7 @@ export default function EksplorasiDiagramPencar() {
   }
 
   // Reset function
-  const handleReset = () => {
+  const handleReset = async () => {
     setCurrentStep(1)
     setXAxisVar(null)
     setYAxisVar(null)
@@ -398,7 +437,7 @@ export default function EksplorasiDiagramPencar() {
     setCorrelationScore(null)
     setSelectedPoint(null)
     setCheckedRows({})
-    clearProgressFromStorage()
+    await clearProgressFromDB()
   }
 
   const getStepMessage = () => {

@@ -215,7 +215,6 @@ export default function GuidingQuestion() {
   const saveAnswersToDatabase = async () => {
     if (!siswaId) return
 
-    setSaving(true)
     setSaveStatus('saving')
 
     try {
@@ -248,14 +247,13 @@ export default function GuidingQuestion() {
 
       if (insertError) throw insertError
 
+      console.log('✅ Answers auto-saved successfully')
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus(''), 3000) // Clear status after 3s
     } catch (err) {
-      console.error('Error saving answers:', err)
+      console.error('❌ Error saving answers:', err)
       setSaveStatus('error')
       setTimeout(() => setSaveStatus(''), 3000)
-    } finally {
-      setSaving(false)
     }
   }
 

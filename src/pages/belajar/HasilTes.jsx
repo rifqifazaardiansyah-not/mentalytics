@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, CheckCircle2, Heart, Brain, Sparkles, ArrowRight, Info } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Heart, Brain, Sparkles, ArrowRight, Info, RefreshCw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import LearningLayout from '../../components/layout/LearningLayout'
 import MiloCharacter from '../../components/milo/MiloCharacter'
@@ -20,6 +20,7 @@ export default function HasilTes() {
   const [aiRecommendation, setAiRecommendation] = useState('')
   const [loadingAI, setLoadingAI] = useState(false)
   const [error, setError] = useState(null)
+  const [canRegenerate, setCanRegenerate] = useState(false)
 
   // Ensure challengeText is set for ChallengeFloatingButton
   useEffect(() => {
@@ -86,10 +87,28 @@ INSTRUKSI:
           // Use existing recommendation
           console.log('📌 Using existing AI recommendation')
           setAiRecommendation(existingAI.response)
+          
+          // Check if it's old format (starts with greeting)
+          const hasGreeting = /^(Halo|Hai|Hi|Selamat)/i.test(existingAI.response.trim())
+          if (hasGreeting) {
+            console.log('⚠️ Old format detected, regenerating...')
+            // Delete old recommendation
+            await supabase
+              .from('ai_interactions')
+              .delete()
+              .eq('siswa_id', siswaId)
+              .eq('halaman', 'hasil_tes')
+            
+            // Generate new one
+            await generateAIRecommendation(data)
+          } else {
+            setCanRegenerate(true)
+          }
         } else {
           // Generate new recommendation
           console.log('✨ Generating new AI recommendation')
           await generateAIRecommendation(data)
+          setCanRegenerate(true)
         }
         
       } catch (err) {
@@ -109,15 +128,23 @@ INSTRUKSI:
     try {
       const chat = createHasilTesChat()
       
-      // Create prompt based on scores
+      // Create detailed prompt for concrete recommendations
       const bullyingCategory = result.skor_bullying >= 22 ? 'Terindikasi sebagai korban bullying' : 'Tidak terindikasi sebagai korban bullying'
       const anxietyCategory = getAnxietyCategory(result.skor_anxiety)
       
-      const prompt = `Halo Milo! Ini hasil asesmen saya:
-- Skor Bullying: ${result.skor_bullying}/200 (${bullyingCategory})
-- Skor Kecemasan: ${result.skor_anxiety}/100 (${anxietyCategory})
+      const prompt = `HASIL ASESMEN SISWA:
+Skor Bullying: ${result.skor_bullying}/200 (${bullyingCategory})
+Skor Kecemasan: ${result.skor_anxiety}/100 (${anxietyCategory})
 
-Bisakah kamu jelaskan hasil ini dan berikan rekomendasi personal untuk saya? Tolong berikan dalam format yang jelas dan mudah dipahami.`
+INSTRUKSI:
+Berikan rekomendasi personal KONKRET untuk siswa ini. JANGAN gunakan sapaan atau pembuka seperti "Halo" atau "Hai". Langsung mulai dengan penjelasan hasil dan rekomendasi.
+
+FORMAT YANG DIHARAPKAN:
+1. Penjelasan singkat tentang hasil (2-3 kalimat)
+2. Rekomendasi konkret yang bisa dilakukan (3-5 langkah praktis)
+3. Motivasi singkat
+
+Mulai langsung dengan: "Hasil asesmen menunjukkan..." atau "Berdasarkan hasil..."`
 
       let fullResponse = ''
       for await (const chunk of streamGeminiResponse(chat, prompt, 'hasil_tes')) {
@@ -125,7 +152,7 @@ Bisakah kamu jelaskan hasil ini dan berikan rekomendasi personal untuk saya? Tol
         setAiRecommendation(fullResponse)
       }
       
-      // Save recommendation to database (optional)
+      // Save recommendation to database
       await supabase
         .from('ai_interactions')
         .insert({
@@ -141,7 +168,26 @@ Bisakah kamu jelaskan hasil ini dan berikan rekomendasi personal untuk saya? Tol
       setAiRecommendation('Maaf, terjadi kesalahan saat memuat rekomendasi AI. Silakan refresh halaman atau gunakan tombol AI di pojok kanan bawah untuk berkonsultasi.')
     } finally {
       setLoadingAI(false)
+      setCanRegenerate(true)
     }
+  }
+
+  // Regenerate recommendation
+  async function handleRegenerate() {
+    if (!surveyResult) return
+    
+    setAiRecommendation('')
+    
+    // Delete old recommendation
+    const siswaId = localStorage.getItem('mentalytics_student_id')
+    await supabase
+      .from('ai_interactions')
+      .delete()
+      .eq('siswa_id', siswaId)
+      .eq('halaman', 'hasil_tes')
+    
+    // Generate new
+    await generateAIRecommendation(surveyResult)
   }
 
   // Convert markdown bold (**text**) to HTML
@@ -387,16 +433,28 @@ Bisakah kamu jelaskan hasil ini dan berikan rekomendasi personal untuk saya? Tol
           transition={{ delay: 0.3 }}
           className="bg-gradient-to-br from-purple-50 to-primary-50 rounded-2xl p-6 md:p-8 shadow-xl border-2 border-purple-300 mb-8"
         >
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-poppins font-semibold text-ink-900">
+                  Rekomendasi Personal dari Milo
+                </h2>
+                <p className="text-sm text-ink-600">Disesuaikan dengan hasil asesmen kamu</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-poppins font-semibold text-ink-900">
-                Rekomendasi Personal dari Milo
-              </h2>
-              <p className="text-sm text-ink-600">Disesuaikan dengan hasil asesmen kamu</p>
-            </div>
+            {canRegenerate && !loadingAI && (
+              <button
+                onClick={handleRegenerate}
+                className="px-4 py-2 bg-white hover:bg-gray-50 text-primary-600 font-medium rounded-lg border-2 border-primary-600 transition-colors flex items-center gap-2"
+                title="Regenerate rekomendasi"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Regenerate</span>
+              </button>
+            )}
           </div>
 
           {loadingAI ? (
