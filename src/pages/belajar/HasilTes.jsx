@@ -133,8 +133,8 @@ INSTRUKSI:
       const anxietyCategory = getAnxietyCategory(result.skor_anxiety)
       
       const prompt = `HASIL ASESMEN SISWA:
-Skor Bullying: ${result.skor_bullying}/200 (${bullyingCategory})
-Skor Kecemasan: ${result.skor_anxiety}/100 (${anxietyCategory})
+Skor Bullying: ${result.skor_bullying}/88 (${bullyingCategory})
+Skor Kecemasan: ${result.skor_anxiety}/56 (${anxietyCategory})
 
 INSTRUKSI:
 Berikan rekomendasi personal KONKRET untuk siswa ini. JANGAN gunakan sapaan atau pembuka seperti "Halo" atau "Hai". Langsung mulai dengan penjelasan hasil dan rekomendasi.
