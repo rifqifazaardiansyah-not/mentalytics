@@ -2,15 +2,6 @@ import { Link } from 'react-router-dom'
 import { CheckCircle, ArrowRight } from 'lucide-react'
 
 export default function TP() {
-  const objectives = [
-    'Memahami konsep variabel independen dan variabel dependen dalam data bivariat',
-    'Membuat dan menginterpretasi diagram pencar (scatter plot) dari data yang dikumpulkan',
-    'Mengidentifikasi pola hubungan (korelasi positif, negatif, atau tidak ada) antara dua variabel',
-    'Menghitung dan memahami koefisien korelasi sederhana',
-    'Menganalisis data kesehatan mental (bullying dan anxiety) secara objektif',
-    'Merumuskan rekomendasi berbasis data untuk mengatasi masalah bullying di sekolah',
-    'Mengembangkan empati dan kesadaran terhadap isu kesehatan mental teman sebaya',
-  ]
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -40,16 +31,16 @@ export default function TP() {
         {/* TP List */}
         <div className="bg-surface rounded-xl p-8 shadow-md">
           <h3 className="text-lg font-poppins font-semibold text-ink-900 mb-6">
-            Setelah menyelesaikan pembelajaran ini, kamu akan mampu:
+            Tujuan Pembelajaran
           </h3>
-          <ul className="space-y-4">
-            {objectives.map((objective, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <CheckCircle className="w-6 h-6 text-primary-600 flex-shrink-0 mt-1" />
-                <span className="text-ink-600 leading-relaxed">{objective}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-4 text-ink-600 leading-relaxed">
+            <p>
+              Melalui pemanfaatan website <span className="font-semibold text-primary-700">Mentalytics</span> terintegrasi 
+              <span className="font-semibold text-primary-700"> AI</span> dalam model <span className="font-semibold text-primary-700">Challenge Based on Deep Learning</span>
+              yang mengangkat isu <span className="font-semibold text-primary-700">bullying dan anxiety (Condition)</span>, murid (Audience) diharapkan mampu <span className="font-semibold text-primary-700">memecahkan (C4) 
+              permasalahan diagram pencar data bivariat (Behaviour)</span> dengan standar ketuntasan minimal <span className="font-semibold text-primary-700">75% (Degree)</span>.
+            </p>
+          </div>
         </div>
 
         {/* Navigation */}

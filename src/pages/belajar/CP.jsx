@@ -22,7 +22,7 @@ export default function CP() {
           </h2>
           <p className="text-ink-600 leading-relaxed">
             Capaian Pembelajaran (CP) adalah kompetensi yang diharapkan dapat dicapai 
-            oleh peserta didik pada akhir pembelajaran. CP menggambarkan kemampuan 
+            oleh murid pada akhir pembelajaran. CP menggambarkan kemampuan 
             yang harus dimiliki setelah menyelesaikan rangkaian kegiatan belajar.
           </p>
         </div>
@@ -30,24 +30,13 @@ export default function CP() {
         {/* CP Content */}
         <div className="bg-surface rounded-xl p-8 shadow-md border-l-4 border-primary-600">
           <h3 className="text-lg font-poppins font-semibold text-ink-900 mb-4">
-            Capaian Pembelajaran — Fase E
+            Capaian Pembelajaran
           </h3>
           <div className="space-y-4 text-ink-600 leading-relaxed">
             <p>
-              Peserta didik dapat <span className="font-semibold text-primary-700">
-              menganalisis dan menginterpretasi data bivariat</span> untuk memahami 
-              hubungan antara dua variabel yang berbeda.
-            </p>
-            <p>
-              Peserta didik mampu <span className="font-semibold text-primary-700">
-              membuat diagram pencar (scatter plot)</span> dan menentukan pola hubungan 
-              (positif, negatif, atau tidak ada hubungan) antara variabel independen 
-              dan variabel dependen.
-            </p>
-            <p>
-              Peserta didik dapat <span className="font-semibold text-primary-700">
-              menggunakan data untuk membuat keputusan</span> dan merumuskan rekomendasi 
-              berbasis bukti dalam konteks kehidupan nyata.
+              Di akhir fase E, murid dapat <span className="font-semibold text-primary-700">
+              menggunakan diagram pencar untuk menyelidiki dan menjelaskan hubungan antara dua variabel numerik</span> 
+              (termasuk salah satunya variabel bebas berupa waktu).
             </p>
           </div>
         </div>
