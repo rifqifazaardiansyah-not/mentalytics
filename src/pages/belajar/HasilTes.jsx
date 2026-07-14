@@ -351,12 +351,12 @@ Mulai langsung dengan: "Hasil asesmen menunjukkan..." atau "Berdasarkan hasil...
                 <span className="text-4xl font-bold text-ink-900">
                   {surveyResult.skor_bullying}
                 </span>
-                <span className="text-lg text-ink-600">/56</span>
+                <span className="text-lg text-ink-600">/88</span>
               </div>
               <div className="w-full bg-white rounded-full h-3 overflow-hidden">
                 <div 
                   className={`h-full ${bullyingStyles.badge} transition-all duration-500`}
-                  style={{ width: `${(surveyResult.skor_bullying / 56) * 100}%` }}
+                  style={{ width: `${(surveyResult.skor_bullying / 88) * 100}%` }}
                 ></div>
               </div>
             </div>
@@ -401,12 +401,12 @@ Mulai langsung dengan: "Hasil asesmen menunjukkan..." atau "Berdasarkan hasil...
                 <span className="text-4xl font-bold text-ink-900">
                   {surveyResult.skor_anxiety}
                 </span>
-                <span className="text-lg text-ink-600">/88</span>
+                <span className="text-lg text-ink-600">/56</span>
               </div>
               <div className="w-full bg-white rounded-full h-3 overflow-hidden">
                 <div 
                   className={`h-full ${anxietyStyles.badge} transition-all duration-500`}
-                  style={{ width: `${(surveyResult.skor_anxiety / 88) * 100}%` }}
+                  style={{ width: `${(surveyResult.skor_anxiety / 56) * 100}%` }}
                 ></div>
               </div>
             </div>
