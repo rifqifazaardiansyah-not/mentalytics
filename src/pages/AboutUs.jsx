@@ -15,25 +15,25 @@ export default function AboutUs() {
       name: 'Najwa Qoirun Nisa',
       program: 'Pendidikan Matematika',
       photo: '/assets/team/najwa.jpg',
-      role: 'Researcher',
+      role: 'Content Developer',
     },
     {
       name: 'Rifqi Faza Ardiansyah',
       program: 'Sistem Informasi',
       photo: '/assets/team/rifqi.jpg',
-      role: 'Developer & System Analyst',
+      role: 'Website Developer & System Analyst',
     },
     {
       name: 'Nada Syifa Salsabila',
       program: 'Pendidikan Biologi',
       photo: '/assets/team/nada.jpg',
-      role: 'Content Developer',
+      role: 'Researcher',
     },
     {
       name: 'Dewi Amalia Khasani',
       program: 'Pendidikan Biologi',
       photo: '/assets/team/dewi.jpg',
-      role: 'Content Developer',
+      role: 'Public Relations',
     },
   ]
 
