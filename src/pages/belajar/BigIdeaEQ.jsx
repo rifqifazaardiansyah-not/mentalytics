@@ -1,6 +1,6 @@
-import { useState, useContext, useEffect } from 'react'
+import { useState, useContext, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { Lightbulb, ArrowRight, Send } from 'lucide-react'
+import { Lightbulb, ArrowRight, Send, Maximize } from 'lucide-react'
 import { motion } from 'framer-motion'
 import MiloCharacter from '../../components/milo/MiloCharacter'
 import MiloDialogBubble from '../../components/milo/MiloDialogBubble'
@@ -10,17 +10,62 @@ import { supabase } from '../../lib/supabaseClient'
 
 export default function BigIdeaEQ() {
   const { studentId } = useContext(StudentContext)
-  const { markStepCompleted, isStepCompleted } = useContext(ProgressContext)
+  const { markStepCompleted } = useContext(ProgressContext)
   const [answer, setAnswer] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [existingAnswer, setExistingAnswer] = useState(null)
+  const videoRef = useRef(null)
+  const videoContainerRef = useRef(null)
+
+  // Video configuration
+  const VIDEO_TYPE = 'local' // Using local video file
+  const VIDEO_URL = '/assets/video/video-big-idea.mp4' // Path relatif dari folder public
 
   // Check if user already answered
   useEffect(() => {
     checkExistingAnswer()
   }, [studentId])
+
+  // Fullscreen handler
+  const handleFullscreen = () => {
+    const container = videoContainerRef.current
+    const video = videoRef.current
+
+    if (!container) return
+
+    try {
+      // Untuk video HTML5 native
+      if (VIDEO_TYPE === 'local' && video) {
+        if (video.requestFullscreen) {
+          video.requestFullscreen()
+        } else if (video.webkitRequestFullscreen) {
+          video.webkitRequestFullscreen() // Safari
+        } else if (video.mozRequestFullScreen) {
+          video.mozRequestFullScreen() // Firefox
+        } else if (video.msRequestFullscreen) {
+          video.msRequestFullscreen() // IE/Edge
+        } else if (video.webkitEnterFullscreen) {
+          video.webkitEnterFullscreen() // iOS Safari
+        }
+      } 
+      // Untuk YouTube iframe atau container
+      else {
+        if (container.requestFullscreen) {
+          container.requestFullscreen()
+        } else if (container.webkitRequestFullscreen) {
+          container.webkitRequestFullscreen()
+        } else if (container.mozRequestFullScreen) {
+          container.mozRequestFullScreen()
+        } else if (container.msRequestFullscreen) {
+          container.msRequestFullscreen()
+        }
+      }
+    } catch (err) {
+      console.error('Fullscreen error:', err)
+    }
+  }
 
   const checkExistingAnswer = async () => {
     try {
@@ -138,25 +183,60 @@ export default function BigIdeaEQ() {
           <div className="grid md:grid-cols-[1fr,200px] gap-6 items-start">
             {/* Video Player */}
             <div className="space-y-4">
-              <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-xl aspect-video">
-                {/* Placeholder for video - will be replaced with actual video */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
-                  <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
-                    <svg className="w-10 h-10 ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+              <div 
+                ref={videoContainerRef}
+                className="relative bg-gray-900 rounded-xl overflow-hidden shadow-xl aspect-video group"
+              >
+                {/* YouTube Video */}
+                {VIDEO_TYPE === 'youtube' && VIDEO_URL && (
+                  <iframe 
+                    src={VIDEO_URL}
+                    className="w-full h-full"
+                    title="Big Idea Video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                  ></iframe>
+                )}
+
+                {/* Local/Hosted Video */}
+                {VIDEO_TYPE === 'local' && VIDEO_URL && (
+                  <video
+                    ref={videoRef}
+                    className="w-full h-full"
+                    controls
+                    controlsList="nodownload"
+                    playsInline
+                    preload="metadata"
+                  >
+                    <source src={VIDEO_URL} type="video/mp4" />
+                    <source src={VIDEO_URL} type="video/webm" />
+                    Browser kamu tidak mendukung tag video.
+                  </video>
+                )}
+
+                {/* Placeholder (no video yet) */}
+                {VIDEO_TYPE === 'placeholder' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
+                    <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
+                      <svg className="w-10 h-10 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </div>
+                    <p className="text-lg font-medium">Video tentang Bullying & Mental Health</p>
+                    <p className="text-sm text-gray-400 mt-2">Video akan tersedia di sini</p>
                   </div>
-                  <p className="text-lg font-medium">Video tentang Bullying & Mental Health</p>
-                  <p className="text-sm text-gray-400 mt-2">Video akan tersedia di sini</p>
-                </div>
-                
-                {/* TODO: Replace with actual video embed */}
-                {/* <iframe 
-                  src="VIDEO_URL_HERE"
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe> */}
+                )}
+
+                {/* Fullscreen Button (only for local video or placeholder) */}
+                {VIDEO_TYPE !== 'youtube' && (
+                  <button
+                    onClick={handleFullscreen}
+                    className="absolute bottom-4 right-4 bg-black/70 hover:bg-black/90 text-white p-3 rounded-lg transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    title="Fullscreen"
+                  >
+                    <Maximize className="w-5 h-5" />
+                  </button>
+                )}
               </div>
 
               <div className="bg-primary-50 rounded-lg p-4">

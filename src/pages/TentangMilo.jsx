@@ -32,7 +32,7 @@ export default function TentangMilo() {
                 <span className="font-semibold text-primary-700">M</span>easure — Mengukur data
               </li>
               <li>
-                <span className="font-semibold text-primary-700">I</span>nterpret — Menginterpretasi makna
+                <span className="font-semibold text-primary-700">I</span>nterpretation — Menginterpretasi makna
               </li>
               <li>
                 <span className="font-semibold text-primary-700">L</span>earn — Belajar bersama
