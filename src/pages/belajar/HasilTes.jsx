@@ -74,38 +74,24 @@ INSTRUKSI:
         setSurveyResult(data)
         
         // Check if AI recommendation already exists
+        // IMPORTANT: Filter by specific prompt pattern to avoid conflict with chat panel
         const { data: existingAI, error: aiError } = await supabase
           .from('ai_interactions')
           .select('response')
           .eq('siswa_id', siswaId)
           .eq('halaman', 'hasil_tes')
+          .like('prompt', 'HASIL ASESMEN SISWA:%') // Only get recommendation, not chat
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle()
         
         if (existingAI && existingAI.response && !aiError) {
-          // Use existing recommendation
-          console.log('📌 Using existing AI recommendation')
+          // Use existing recommendation (no regeneration on refresh)
+          console.log('📌 Using existing AI recommendation from database')
           setAiRecommendation(existingAI.response)
-          
-          // Check if it's old format (starts with greeting)
-          const hasGreeting = /^(Halo|Hai|Hi|Selamat)/i.test(existingAI.response.trim())
-          if (hasGreeting) {
-            console.log('⚠️ Old format detected, regenerating...')
-            // Delete old recommendation
-            await supabase
-              .from('ai_interactions')
-              .delete()
-              .eq('siswa_id', siswaId)
-              .eq('halaman', 'hasil_tes')
-            
-            // Generate new one
-            await generateAIRecommendation(data)
-          } else {
-            setCanRegenerate(true)
-          }
+          setCanRegenerate(true)
         } else {
-          // Generate new recommendation
+          // Generate new recommendation (only if no existing one)
           console.log('✨ Generating new AI recommendation')
           await generateAIRecommendation(data)
           setCanRegenerate(true)
@@ -178,13 +164,14 @@ Mulai langsung dengan: "Hasil asesmen menunjukkan..." atau "Berdasarkan hasil...
     
     setAiRecommendation('')
     
-    // Delete old recommendation
+    // Delete old recommendation ONLY (not chat messages)
     const siswaId = localStorage.getItem('mentalytics_student_id')
     await supabase
       .from('ai_interactions')
       .delete()
       .eq('siswa_id', siswaId)
       .eq('halaman', 'hasil_tes')
+      .like('prompt', 'HASIL ASESMEN SISWA:%') // Only delete recommendation
     
     // Generate new
     await generateAIRecommendation(surveyResult)

@@ -15,7 +15,7 @@ export function clearAllAIChatHistory() {
   console.log('🗑️ Cleared all AI chat history')
 }
 
-export default function AIChatPanel({ context, onClose }) {
+export default function AIChatPanel({ context, onClose, surveyScores = null }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -61,7 +61,7 @@ export default function AIChatPanel({ context, onClose }) {
     console.log(`🗑️ Cleared chat history for ${context}`)
   }
 
-  // Initialize Gemini chat session
+  // Initialize Gemini chat session with optional context injection
   useEffect(() => {
     if (!geminiChatRef.current) {
       if (context === 'solution') {
@@ -69,8 +69,19 @@ export default function AIChatPanel({ context, onClose }) {
       } else {
         geminiChatRef.current = createGuidingResourceChat()
       }
+      
+      // Inject survey scores context for hasil_tes (if provided and first time)
+      if (context === 'hasil_tes' && surveyScores && messages.length === 0) {
+        const contextMessage = `[CONTEXT: Siswa ini memiliki Skor Bullying ${surveyScores.bullying}/88 (${surveyScores.bullyingCategory}) dan Skor Kecemasan ${surveyScores.anxiety}/56 (${surveyScores.anxietyCategory})]`
+        
+        // Add context to chat session internally (not shown to user)
+        geminiChatRef.current.addMessage('user', contextMessage)
+        geminiChatRef.current.addMessage('model', 'Terima kasih atas informasi hasil asesmen. Aku siap membantu menjelaskan dan memberikan dukungan.')
+        
+        console.log('📋 Injected survey scores context to chat session')
+      }
     }
-  }, [context])
+  }, [context, surveyScores, messages.length])
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -128,6 +139,8 @@ export default function AIChatPanel({ context, onClose }) {
     setLoading(true)
     setStreamingMessage('')
 
+    console.log('🎯 Current context:', context) // DEBUG LOG
+
     // Retry configuration
     const MAX_RETRIES = 3
     const RETRY_DELAY = 2000 // 2 seconds
@@ -140,6 +153,7 @@ export default function AIChatPanel({ context, onClose }) {
           } else {
             geminiChatRef.current = createGuidingResourceChat()
           }
+          console.log('✅ Created new chat session for context:', context) // DEBUG LOG
         }
 
         console.log(`🔄 Attempt ${attempt}/${MAX_RETRIES}...`)

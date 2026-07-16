@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, HelpCircle, BarChart3, ArrowRight } from 'lucide-react'
+import { CheckCircle2, HelpCircle, BarChart3, ArrowRight, AlertCircle, RotateCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
 import LearningLayout from '../../components/layout/LearningLayout'
 import MiloCharacter from '../../components/milo/MiloCharacter'
@@ -18,6 +18,11 @@ export default function GuidingQuestion() {
   const [error, setError] = useState(null)
   const [siswaId, setSiswaId] = useState(null)
   const [saveStatus, setSaveStatus] = useState('') // 'saving' | 'saved' | 'error'
+  
+  // Data change detection
+  const [dataHasChanged, setDataHasChanged] = useState(false)
+  const [savedRespondentCount, setSavedRespondentCount] = useState(0)
+  const [currentRespondentCount, setCurrentRespondentCount] = useState(0)
   
   // Data from eksplorasi diagram pencar
   const [eksplorasiData, setEksplorasiData] = useState(null)
@@ -66,29 +71,33 @@ export default function GuidingQuestion() {
         }
         setSiswaId(storedSiswaId)
 
-        // Load eksplorasi diagram pencar progress
-        const eksplorasiKey = `eksplorasi_diagram_progress_${storedSiswaId}`
-        const savedEksplorasi = localStorage.getItem(eksplorasiKey)
-        
-        if (savedEksplorasi) {
-          try {
-            const eksplorasi = JSON.parse(savedEksplorasi)
-            setEksplorasiData(eksplorasi)
-            
-            // Use student's inputted data (no regression line needed)
-            if (eksplorasi.inputtedPoints && eksplorasi.inputtedPoints.length > 0) {
-              setInputtedPoints(eksplorasi.inputtedPoints)
-            }
-            if (eksplorasi.correlationScore !== undefined) {
-              setCorrelationScore(eksplorasi.correlationScore)
-            }
-            if (eksplorasi.xAxisVar) setXAxisVar(eksplorasi.xAxisVar)
-            if (eksplorasi.yAxisVar) setYAxisVar(eksplorasi.yAxisVar)
-            if (eksplorasi.xScale) setXScale(eksplorasi.xScale)
-            if (eksplorasi.yScale) setYScale(eksplorasi.yScale)
-          } catch (e) {
-            console.error('Error parsing eksplorasi data:', e)
+        // Load eksplorasi diagram pencar progress FROM DATABASE (not localStorage)
+        // This ensures we always get the student's actual saved work, not stale localStorage
+        const { data: progressData, error: progressError } = await supabase
+          .from('eksplorasi_diagram_progress')
+          .select('*')
+          .eq('siswa_id', storedSiswaId)
+          .eq('kelas_id', kelasId)
+          .single()
+
+        if (progressData && !progressError) {
+          console.log('📂 Loading diagram progress from DATABASE:', progressData)
+          setEksplorasiData(progressData)
+          
+          // Use data from database
+          if (progressData.inputted_points && progressData.inputted_points.length > 0) {
+            setSavedRespondentCount(progressData.inputted_points.length)
+            setInputtedPoints(progressData.inputted_points)
           }
+          if (progressData.correlation_score !== undefined) {
+            setCorrelationScore(progressData.correlation_score)
+          }
+          if (progressData.x_axis_var) setXAxisVar(progressData.x_axis_var)
+          if (progressData.y_axis_var) setYAxisVar(progressData.y_axis_var)
+          if (progressData.x_scale) setXScale(progressData.x_scale)
+          if (progressData.y_scale) setYScale(progressData.y_scale)
+        } else {
+          console.log('📝 No diagram progress found in database')
         }
 
         // Fetch survey data (as fallback if no eksplorasi data)
@@ -123,9 +132,16 @@ export default function GuidingQuestion() {
         }))
 
         setSurveyData(formattedData)
+        setCurrentRespondentCount(formattedData.length)
+        
+        // Detect if data has changed
+        if (progressData && formattedData.length !== savedRespondentCount) {
+          setDataHasChanged(true)
+          console.log(`⚠️ Data changed! Saved: ${savedRespondentCount}, Current: ${formattedData.length}`)
+        }
 
-        // Only calculate correlation if not loaded from eksplorasi
-        if (!savedEksplorasi && formattedData.length > 0) {
+        // Only calculate correlation if not loaded from database
+        if (!progressData && formattedData.length > 0) {
           const xValues = formattedData.map(d => d.bullying)
           const yValues = formattedData.map(d => d.anxiety)
         
@@ -384,6 +400,39 @@ export default function GuidingQuestion() {
                 </h3>
               </div>
               
+              {/* Compact Data change warning - ONLY shown in diagram card */}
+              {dataHasChanged && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4 mb-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-orange-900 mb-1">
+                        ⚠️ Data Berubah!
+                      </p>
+                      <p className="text-xs text-orange-800 mb-3">
+                        Responden pada diagram dibawah ini masih {savedRespondentCount} orang, 
+                        sedangkan sekarang ada {currentRespondentCount} orang. 
+                        Diagram ini masih pakai data lama.
+                      </p>
+                      <p className="text-xs text-red-600 mb-3">
+                        Segera update diagram kamu!
+                      </p>
+                      <button
+                        onClick={() => navigate('/kegiatan-belajar/the-challenge/eksplorasi-diagram')}
+                        className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Update Diagram
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+              
               {/* Simple correlation info card */}
               <div className="bg-primary-50 rounded-lg p-4 mb-4">
                 <p className="text-xs text-ink-600 mb-1">Nilai Korelasi (r):</p>
@@ -396,11 +445,11 @@ export default function GuidingQuestion() {
               <svg
                 width="100%"
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                className="border-2 border-gray-300 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100"
+                className="border-2 border-gray-400 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100"
               >
                 {/* Grid lines */}
-                {Array.from({ length: 11 }, (_, i) => i * (xScale / 10)).map((val, idx) => (
-                  <g key={`grid-x-${idx}`}>
+                {Array.from({ length: 11 }, (_, i) => i * (xScale / 10)).map((val, i) => (
+                  <g key={`grid-x-${i}`}>
                     <line
                       x1={valueToCoord(val, xScale, chartWidth)}
                       y1={padding}
@@ -412,8 +461,8 @@ export default function GuidingQuestion() {
                     />
                   </g>
                 ))}
-                {Array.from({ length: 11 }, (_, i) => i * (yScale / 10)).map((val, idx) => (
-                  <g key={`grid-y-${idx}`}>
+                {Array.from({ length: 11 }, (_, i) => i * (yScale / 10)).map((val, i) => (
+                  <g key={`grid-y-${i}`}>
                     <line
                       x1={padding}
                       y1={valueToCoord(yScale - val, yScale, chartHeight)}
@@ -426,29 +475,34 @@ export default function GuidingQuestion() {
                   </g>
                 ))}
 
-                {/* Axes with arrows */}
+                {/* Main Axes with arrows */}
+                {/* X-axis line */}
                 <line
                   x1={padding}
                   y1={chartHeight - padding}
                   x2={chartWidth - padding - 15}
                   y2={chartHeight - padding}
                   stroke="#1f2937"
-                  strokeWidth="2"
+                  strokeWidth="3"
                 />
+                {/* X-axis arrow → */}
                 <polygon
-                  points={`${chartWidth - padding - 15},${chartHeight - padding - 5} ${chartWidth - padding},${chartHeight - padding} ${chartWidth - padding - 15},${chartHeight - padding + 5}`}
+                  points={`${chartWidth - padding - 15},${chartHeight - padding - 6} ${chartWidth - padding},${chartHeight - padding} ${chartWidth - padding - 15},${chartHeight - padding + 6}`}
                   fill="#1f2937"
                 />
+                
+                {/* Y-axis line */}
                 <line
                   x1={padding}
                   y1={chartHeight - padding}
                   x2={padding}
                   y2={padding + 15}
                   stroke="#1f2937"
-                  strokeWidth="2"
+                  strokeWidth="3"
                 />
+                {/* Y-axis arrow ↑ */}
                 <polygon
-                  points={`${padding - 5},${padding + 15} ${padding},${padding} ${padding + 5},${padding + 15}`}
+                  points={`${padding - 6},${padding + 15} ${padding},${padding} ${padding + 6},${padding + 15}`}
                   fill="#1f2937"
                 />
 
@@ -458,22 +512,50 @@ export default function GuidingQuestion() {
                   y={chartHeight - 10}
                   textAnchor="middle"
                   fontSize="14"
-                  fill="#374151"
+                  fill="#1f2937"
                   fontWeight="600"
                 >
                   {xAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
+                  {xScale && ` (0-${xScale})`}
                 </text>
                 <text
-                  x={15}
+                  x={20}
                   y={chartHeight / 2}
                   textAnchor="middle"
                   fontSize="14"
-                  fill="#374151"
+                  fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 15, ${chartHeight / 2})`}
+                  transform={`rotate(-90, 20, ${chartHeight / 2})`}
                 >
                   {yAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
+                  {yScale && ` (0-${yScale})`}
                 </text>
+
+                {/* Scale markers */}
+                {Array.from({ length: 6 }, (_, i) => i * (xScale / 5)).map((val) => (
+                  <text
+                    key={`x-${val}`}
+                    x={valueToCoord(val, xScale, chartWidth)}
+                    y={chartHeight - padding + 20}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#374151"
+                  >
+                    {Math.round(val)}
+                  </text>
+                ))}
+                {Array.from({ length: 6 }, (_, i) => i * (yScale / 5)).map((val) => (
+                  <text
+                    key={`y-${val}`}
+                    x={padding - 20}
+                    y={valueToCoord(yScale - val, yScale, chartHeight) + 4}
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill="#374151"
+                  >
+                    {Math.round(val)}
+                  </text>
+                ))}
 
                 {/* Data points from student's input */}
                 {inputtedPoints.map((point, idx) => {

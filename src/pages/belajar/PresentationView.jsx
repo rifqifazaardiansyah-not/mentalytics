@@ -35,13 +35,27 @@ export default function PresentationView() {
           return
         }
 
-        // Load diagram data from localStorage
-        const diagramKey = `eksplorasi_diagram_progress_${siswaId}`
-        const diagramData = localStorage.getItem(diagramKey)
+        // Load diagram data from DATABASE (not localStorage for consistency)
+        const { data: diagramData, error: diagramError } = await supabase
+          .from('eksplorasi_diagram_progress')
+          .select('*')
+          .eq('siswa_id', siswaId)
+          .single()
         
         let parsedDiagram = {}
-        if (diagramData) {
-          parsedDiagram = JSON.parse(diagramData)
+        if (diagramData && !diagramError) {
+          console.log('📂 Loading diagram from DATABASE for presentation:', diagramData)
+          parsedDiagram = {
+            xAxisVar: diagramData.x_axis_var,
+            yAxisVar: diagramData.y_axis_var,
+            inputtedPoints: diagramData.inputted_points,
+            regressionLine: diagramData.regression_line,
+            correlationScore: diagramData.correlation_score,
+            xScale: diagramData.x_scale,
+            yScale: diagramData.y_scale
+          }
+        } else {
+          console.log('📝 No diagram data found in database')
         }
 
         // Load solution data from database

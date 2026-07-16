@@ -1,13 +1,25 @@
 // Gemini AI Service using Official Google SDK
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-const PRIMARY_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const API_KEYS = [
-  import.meta.env.VITE_GEMINI_API_KEY,
-  import.meta.env.VITE_GEMINI_API_KEY_2,
-  import.meta.env.VITE_GEMINI_API_KEY_3,
-  // Tambahkan lebih banyak API keys sesuai kebutuhan
-].filter(Boolean) // Remove undefined keys
+// Auto-detect all available Gemini API keys (supports unlimited keys)
+const API_KEYS = (() => {
+  const keys = []
+  
+  // Check for VITE_GEMINI_API_KEY (no number suffix)
+  if (import.meta.env.VITE_GEMINI_API_KEY) {
+    keys.push(import.meta.env.VITE_GEMINI_API_KEY)
+  }
+  
+  // Check for VITE_GEMINI_API_KEY_2, _3, _4, ... up to _20
+  for (let i = 2; i <= 20; i++) {
+    const key = import.meta.env[`VITE_GEMINI_API_KEY_${i}`]
+    if (key) {
+      keys.push(key)
+    }
+  }
+  
+  return keys
+})()
 
 let currentKeyIndex = 0
 
@@ -23,12 +35,21 @@ console.log('🔑 Gemini API Keys loaded:', API_KEYS.length, 'keys available')
 
 if (API_KEYS.length === 0) {
   console.error('❌ No VITE_GEMINI_API_KEY found')
+  console.error('💡 Pastikan file .env.local sudah dibuat dan berisi VITE_GEMINI_API_KEY')
+  console.error('💡 Restart dev server setelah mengubah .env file')
 } else {
   console.log('✅ API Keys available:', API_KEYS.length)
   API_KEYS.forEach((key, index) => {
-    console.log(`   Key #${index + 1}:`, key.substring(0, 15) + '...')
+    console.log(`   Key #${index + 1}:`, key ? key.substring(0, 15) + '...' : '(empty)')
   })
+  
+  // Calculate total capacity
+  const RPM_PER_KEY = 15
+  const totalRPM = API_KEYS.length * RPM_PER_KEY
+  const estimatedConcurrentUsers = Math.floor(totalRPM / 2) // Assuming 2 req/user/min
+  console.log(`📊 Estimated capacity: ${totalRPM} RPM (${estimatedConcurrentUsers}+ concurrent users)`)
 }
+
 
 // Initialize Google Generative AI (will be re-created on each request with rotated key)
 function getGenAI() {
@@ -37,6 +58,8 @@ function getGenAI() {
 
 // System instruction untuk konteks Solution - Idea Sparker (OPTIMIZED)
 const SOLUTION_CONTEXT = `Kamu Milo, AI pemantik ide untuk murid SMP merancang solusi bullying & kecemasan dari data survei kelas.
+
+KONTEKS EKSKLUSIF: HANYA bahas solusi bullying, kecemasan, dan rekomendasi dari data survei.
 
 PRINSIP:
 1. SPARK: Picu pemikiran dengan pertanyaan reflektif
@@ -54,10 +77,15 @@ ATURAN:
 - Rekomendasi harus konkret & bisa dimulai minggu ini
 - Tone: supportive, 3-5 kalimat, 1-2 emoji natural
 
-OFF-TOPIC: "Fokus ke solusi bullying & kecemasan dulu ya 😊"`
+SAPAAN UMUM (Hai/Halo/dll):
+Respons: "Hai! 👋 Aku Milo, siap bantu kamu merancang solusi untuk masalah bullying dan kecemasan di kelasmu. Sudah lihat data surveinya? Ada pola yang menarik perhatianmu?"
+
+OFF-TOPIC: "Fokus ke solusi bullying & kecemasan dulu ya 😊 Apa yang ingin kamu bahas dari data survei?"`
 
 // System instruction untuk konteks Guiding Resource - Adaptive Scaffolding (OPTIMIZED)
 const GUIDING_RESOURCE_CONTEXT = `Kamu Milo, AI tutor untuk murid SMP memahami diagram pencar & data bivariat.
+
+KONTEKS EKSKLUSIF: HANYA bahas diagram pencar, korelasi, dan statistika bivariat.
 
 MATERI: Diagram Pencar (2 variabel), Korelasi (positif/negatif/tidak ada), Kekuatan (r: -1 sampai +1)
 
@@ -77,17 +105,22 @@ ATURAN:
 - Tone: ramah, patient, 1-2 emoji
 - Akhiri dengan pertanyaan (fase awal) atau penjelasan (fase akhir)
 
-OFF-TOPIC: "Fokus ke diagram pencar dulu ya 😅"`
+SAPAAN UMUM (Hai/Halo/dll):
+Respons: "Hai! 👋 Aku Milo, tutor diagram pencar-mu. Ada yang mau ditanyakan tentang diagram pencar, korelasi, atau data bivariat?"
+
+OFF-TOPIC: "Fokus ke diagram pencar dulu ya 😅 Ada yang ingin kamu tanyakan tentang materi ini?"`
 
 // System instruction untuk konteks Hasil Tes - Personal Counselor (OPTIMIZED)
 const HASIL_TES_CONTEXT = `Kamu Milo, AI konselor pribadi untuk murid SMP. Tugas: berikan rekomendasi KONKRET berdasarkan hasil asesmen.
+
+KONTEKS EKSKLUSIF: HANYA bahas hasil tes kecemasan dan bullying, serta rekomendasi kesehatan mental.
 
 PEDOMAN SKOR:
 BULLYING: ≥22 terindikasi, <22 tidak
 ANXIETY: <14 tidak ada, 14-20 ringan, 21-27 sedang, 28-41 berat, 42-56 panik
 
 ATURAN PENTING:
-1. JANGAN gunakan sapaan (Halo/Hai/dll)
+1. JANGAN gunakan sapaan (Halo/Hai/dll) di respons pertama tentang hasil
 2. LANGSUNG mulai dengan penjelasan hasil
 3. Berikan rekomendasi KONKRET yang actionable
 4. Format: Penjelasan → Rekomendasi → Motivasi
@@ -111,24 +144,12 @@ STRATEGI per KATEGORI:
 
 CRISIS: "Segera bicara orang tua, hubungi BK hari ini, darurat: 119 ext 8"
 
+SAPAAN UMUM (Hai/Halo/dll):
+Respons: "Hai! 👋 Aku Milo, konselor pribadi-mu. Ada yang ingin kamu tanyakan tentang hasil tes atau kesehatan mentalmu?"
+
 TONE: supportive, warm, direct, 4-6 kalimat, 1-2 emoji
 
-CONTOH BAIK:
-"Hasil asesmen menunjukkan kamu mengalami kecemasan ringan dengan skor 18/100. Ini wajar dialami remaja dan bisa diatasi dengan langkah sederhana:
-
-1. Praktikkan teknik pernapasan 4-7-8 setiap pagi
-2. Tulis jurnal harian untuk ekspresikan perasaan
-3. Olahraga ringan 30 menit setiap hari
-4. Batasi screentime 1 jam sebelum tidur
-5. Bicara dengan teman/keluarga yang dipercaya
-
-Kamu bisa mengatasi ini! 💙"
-
-CONTOH BURUK:
-"Halo! Terima kasih sudah berbagi hasil asesmen..."
-"Hai! Bagaimana kabarmu hari ini?"
-
-OFF-TOPIC: "Fokus hasil tes & kesehatan mental ya 😊"`
+OFF-TOPIC: "Fokus hasil tes & kesehatan mental ya 😊 Ada yang mau kamu tanyakan tentang ini?"`
 
 // Chat history storage dengan token management
 class ChatSession {
@@ -214,10 +235,12 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
       GUIDING_RESOURCE_CONTEXT
     
     console.log('📡 Calling Gemini API with SDK...')
+    console.log('📋 Using system instruction for context:', context)
     
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest', // Menggunakan model yang terbukti sukses via cURL
+      model: 'gemini-flash-latest',
+      systemInstruction: systemInstruction, // Native system instruction support
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -228,18 +251,11 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     
     console.log('✅ Preparing content for streaming')
     
-    // Prepend system instruction as first user message if history is empty
-    let messageToSend = userMessage
-    if (chat.getHistory().length === 1) {
-      // First message - prepend system instruction
-      messageToSend = `${systemInstruction}\n\n---\n\nUser: ${userMessage}`
-      console.log('📋 Adding system instruction to first message')
-    }
-    
     // Build contents array with history + current message
+    // System instruction sudah di-handle oleh model config, tidak perlu prepend manual
     const contents = [
       ...chat.getHistory().slice(0, -1), // History without current message
-      { role: 'user', parts: [{ text: messageToSend }] }
+      { role: 'user', parts: [{ text: userMessage }] }
     ]
     
     // Use generateContentStream for faster streaming
@@ -302,7 +318,8 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
     
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest', // Menggunakan model yang terbukti sukses via cURL
+      model: 'gemini-flash-latest',
+      systemInstruction: systemInstruction, // Native system instruction support
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -311,18 +328,11 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
       }
     })
     
-    // Prepend system instruction as first user message if history is empty
-    let messageToSend = userMessage
-    if (chat.getHistory().length === 1) {
-      // First message - prepend system instruction
-      messageToSend = `${systemInstruction}\n\n---\n\nUser: ${userMessage}`
-      console.log('� Adding system instruction to first message')
-    }
-    
     // Build contents array with history + current message
+    // System instruction sudah di-handle oleh model config
     const contents = [
       ...chat.getHistory().slice(0, -1), // History without current message
-      { role: 'user', parts: [{ text: messageToSend }] }
+      { role: 'user', parts: [{ text: userMessage }] }
     ]
     
     // Generate content

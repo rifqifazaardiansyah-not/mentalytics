@@ -1,12 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import AIChatPanel from '../ai/AIChatPanel'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function AIFloatingButton({ context }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [surveyScores, setSurveyScores] = useState(null)
+
+  // Fetch survey scores if context is hasil_tes
+  useEffect(() => {
+    async function fetchSurveyScores() {
+      if (context === 'hasil_tes') {
+        try {
+          const siswaId = localStorage.getItem('mentalytics_student_id')
+          if (!siswaId) return
+
+          const { data, error } = await supabase
+            .from('survey_results')
+            .select('skor_bullying, skor_anxiety')
+            .eq('siswa_id', siswaId)
+            .single()
+
+          if (data && !error) {
+            // Helper function to get category
+            const getBullyingCategory = (score) => {
+              return score >= 22 ? 'Terindikasi korban bullying' : 'Tidak terindikasi'
+            }
+            
+            const getAnxietyCategory = (score) => {
+              if (score < 14) return 'Tidak ada kecemasan'
+              if (score <= 20) return 'Kecemasan ringan'
+              if (score <= 27) return 'Kecemasan sedang'
+              if (score <= 41) return 'Kecemasan berat'
+              return 'Kecemasan panik'
+            }
+
+            setSurveyScores({
+              bullying: data.skor_bullying,
+              anxiety: data.skor_anxiety,
+              bullyingCategory: getBullyingCategory(data.skor_bullying),
+              anxietyCategory: getAnxietyCategory(data.skor_anxiety)
+            })
+            console.log('📊 Fetched survey scores for AI context:', data)
+          }
+        } catch (err) {
+          console.error('Error fetching survey scores:', err)
+        }
+      }
+    }
+
+    fetchSurveyScores()
+  }, [context])
 
   return (
     <>
@@ -57,6 +104,7 @@ export default function AIFloatingButton({ context }) {
         <AIChatPanel
           context={context}
           onClose={() => setIsOpen(false)}
+          surveyScores={surveyScores}
         />
       )}
     </>
