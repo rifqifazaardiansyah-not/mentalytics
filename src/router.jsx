@@ -25,6 +25,7 @@ import HasilGuidingActivities from './pages/belajar/HasilGuidingActivities'
 import EksplorasiDiagramPencar from './pages/belajar/EksplorasiDiagramPencar'
 import GuidingQuestion from './pages/belajar/GuidingQuestion'
 import Solution from './pages/belajar/Solution'
+import Reflection from './pages/belajar/Reflection'
 import PresentationView from './pages/belajar/PresentationView'
 import HasilTes from './pages/belajar/HasilTes'
 
@@ -57,6 +58,7 @@ const router = createBrowserRouter([
       { path: 'kegiatan-belajar/the-challenge/eksplorasi-diagram', element: <ProtectedRoute><EksplorasiDiagramPencar /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/guiding-question', element: <ProtectedRoute><GuidingQuestion /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/solution', element: <ProtectedRoute><Solution /></ProtectedRoute> },
+      { path: 'kegiatan-belajar/the-challenge/reflection', element: <ProtectedRoute><Reflection /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/presentation', element: <ProtectedRoute><PresentationView /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/hasil-tes', element: <ProtectedRoute><HasilTes /></ProtectedRoute> },
     ],

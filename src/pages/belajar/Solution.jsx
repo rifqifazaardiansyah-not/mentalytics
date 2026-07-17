@@ -394,10 +394,10 @@ INSTRUKSI:
           {/* Navigation */}
           <div className="flex justify-center pt-4">
             <button
-              onClick={() => navigate('/kegiatan-belajar/the-challenge/hasil-tes')}
+              onClick={() => navigate('/kegiatan-belajar/the-challenge/reflection')}
               className="px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors flex items-center gap-2 shadow-lg"
             >
-              Lanjut ke Hasil Tes
+              Lanjut ke Refleksi
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
