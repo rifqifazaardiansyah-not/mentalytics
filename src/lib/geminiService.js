@@ -57,7 +57,7 @@ function getGenAI() {
 }
 
 // System instruction untuk konteks Solution - Idea Sparker (OPTIMIZED)
-const SOLUTION_CONTEXT = `Kamu Milo, AI pemantik ide untuk murid SMP merancang solusi bullying & kecemasan dari data survei kelas.
+const SOLUTION_CONTEXT = `Kamu Milo, AI pemantik ide untuk murid SMA merancang solusi bullying & kecemasan dari data survei kelas.
 
 KONTEKS EKSKLUSIF: HANYA bahas solusi bullying, kecemasan, dan rekomendasi dari data survei.
 
@@ -83,7 +83,7 @@ Respons: "Hai! 👋 Aku Milo, siap bantu kamu merancang solusi untuk masalah bul
 OFF-TOPIC: "Fokus ke solusi bullying & kecemasan dulu ya 😊 Apa yang ingin kamu bahas dari data survei?"`
 
 // System instruction untuk konteks Guiding Resource - Adaptive Scaffolding (OPTIMIZED)
-const GUIDING_RESOURCE_CONTEXT = `Kamu Milo, AI tutor untuk murid SMP memahami diagram pencar & data bivariat.
+const GUIDING_RESOURCE_CONTEXT = `Kamu Milo, AI tutor untuk murid SMA memahami diagram pencar & data bivariat.
 
 KONTEKS EKSKLUSIF: HANYA bahas diagram pencar, korelasi, dan statistika bivariat.
 
@@ -111,7 +111,7 @@ Respons: "Hai! 👋 Aku Milo, tutor diagram pencar-mu. Ada yang mau ditanyakan t
 OFF-TOPIC: "Fokus ke diagram pencar dulu ya 😅 Ada yang ingin kamu tanyakan tentang materi ini?"`
 
 // System instruction untuk konteks Hasil Tes - Personal Counselor (OPTIMIZED)
-const HASIL_TES_CONTEXT = `Kamu Milo, AI konselor pribadi untuk murid SMP. Tugas: berikan rekomendasi KONKRET berdasarkan hasil asesmen.
+const HASIL_TES_CONTEXT = `Kamu Milo, AI konselor pribadi untuk murid SMA. Tugas: berikan rekomendasi KONKRET berdasarkan hasil asesmen.
 
 KONTEKS EKSKLUSIF: HANYA bahas hasil tes kecemasan dan bullying, serta rekomendasi kesehatan mental.
 
