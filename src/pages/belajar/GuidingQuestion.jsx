@@ -21,7 +21,7 @@ export default function GuidingQuestion() {
   
   // Data change detection
   const [dataHasChanged, setDataHasChanged] = useState(false)
-  const [savedRespondentCount, setSavedRespondentCount] = useState(0)
+  const [inputtedPointsCount, setInputtedPointsCount] = useState(0)
   const [currentRespondentCount, setCurrentRespondentCount] = useState(0)
   
   // Data from eksplorasi diagram pencar
@@ -86,7 +86,7 @@ export default function GuidingQuestion() {
           
           // Use data from database
           if (progressData.inputted_points && progressData.inputted_points.length > 0) {
-            setSavedRespondentCount(progressData.inputted_points.length)
+            setInputtedPointsCount(progressData.inputted_points.length)
             setInputtedPoints(progressData.inputted_points)
           }
           if (progressData.correlation_score !== undefined) {
@@ -135,13 +135,18 @@ export default function GuidingQuestion() {
         setCurrentRespondentCount(formattedData.length)
         
         // Detect if data has changed
-        if (progressData && formattedData.length !== savedRespondentCount) {
-          setDataHasChanged(true)
-          console.log(`⚠️ Data changed! Saved: ${savedRespondentCount}, Current: ${formattedData.length}`)
-        } else if (progressData && formattedData.length === savedRespondentCount) {
-          // Data is now in sync, hide the banner
-          setDataHasChanged(false)
-          console.log(`✅ Data in sync! Count: ${formattedData.length}`)
+        // Compare inputted points count with current survey respondent count
+        if (progressData && progressData.inputted_points) {
+          const inputCount = progressData.inputted_points.length
+          const surveyCount = formattedData.length
+          
+          if (inputCount !== surveyCount) {
+            setDataHasChanged(true)
+            console.log(`⚠️ Data changed! Input points: ${inputCount}, Survey respondents: ${surveyCount}`)
+          } else {
+            setDataHasChanged(false)
+            console.log(`✅ Data in sync! Count: ${surveyCount}`)
+          }
         }
 
         // Only calculate correlation if not loaded from database
@@ -418,8 +423,8 @@ export default function GuidingQuestion() {
                         ⚠️ Data Berubah!
                       </p>
                       <p className="text-xs text-orange-800 mb-3">
-                        Responden pada diagram dibawah ini masih {savedRespondentCount} orang, 
-                        sedangkan sekarang ada {currentRespondentCount} orang. 
+                        Diagram kamu memiliki {inputtedPointsCount} titik, 
+                        sedangkan sekarang ada {currentRespondentCount} responden survey. 
                         Diagram ini masih pakai data lama.
                       </p>
                       <p className="text-xs text-red-600 mb-3">
