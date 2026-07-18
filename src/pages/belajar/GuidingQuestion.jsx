@@ -138,6 +138,10 @@ export default function GuidingQuestion() {
         if (progressData && formattedData.length !== savedRespondentCount) {
           setDataHasChanged(true)
           console.log(`⚠️ Data changed! Saved: ${savedRespondentCount}, Current: ${formattedData.length}`)
+        } else if (progressData && formattedData.length === savedRespondentCount) {
+          // Data is now in sync, hide the banner
+          setDataHasChanged(false)
+          console.log(`✅ Data in sync! Count: ${formattedData.length}`)
         }
 
         // Only calculate correlation if not loaded from database
