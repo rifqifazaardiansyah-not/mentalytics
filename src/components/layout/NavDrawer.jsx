@@ -47,10 +47,10 @@ export default function NavDrawer({ isOpen, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'tween', duration: 0.3 }}
-            className="fixed top-0 left-0 bottom-0 w-64 bg-surface shadow-xl z-50"
+            className="fixed top-0 left-0 bottom-0 w-64 bg-surface shadow-xl z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-primary-300">
+            <div className="flex items-center justify-between p-4 border-b border-primary-300 flex-shrink-0">
               <h2 className="text-lg font-poppins font-semibold text-ink-900">
                 Menu
               </h2>
@@ -63,8 +63,8 @@ export default function NavDrawer({ isOpen, onClose }) {
               </button>
             </div>
 
-            {/* Menu Items */}
-            <nav className="p-4">
+            {/* Menu Items - Scrollable */}
+            <nav className="flex-1 overflow-y-auto p-4">
               <ul className="space-y-2">
                 {menuItems.map((item) => (
                   <li key={item.path}>
@@ -134,8 +134,8 @@ export default function NavDrawer({ isOpen, onClose }) {
               </ul>
             </nav>
 
-            {/* Footer */}
-            <div className="absolute bottom-0 left-0 right-0 border-t border-primary-300">
+            {/* Footer - Fixed at bottom */}
+            <div className="flex-shrink-0 border-t border-primary-300">
               {/* User Info if in class */}
               {isInClass && (
                 <div className="p-4 bg-primary-50">
