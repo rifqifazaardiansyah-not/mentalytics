@@ -5,15 +5,13 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 console.log('🔐 Supabase Config:', {
   url: supabaseUrl ? '✅ Found' : '❌ Missing',
-  urlValue: supabaseUrl,
-  anonKey: supabaseAnonKey ? '✅ Found' : '❌ Missing',
-  anonKeyPreview: supabaseAnonKey ? supabaseAnonKey.substring(0, 20) + '...' : 'undefined'
+  anonKey: supabaseAnonKey ? '✅ Found' : '❌ Missing'
 })
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase environment variables!', {
-    VITE_SUPABASE_URL: supabaseUrl,
-    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'exists' : 'missing'
+    url: supabaseUrl ? 'present' : 'missing',
+    anonKey: supabaseAnonKey ? 'present' : 'missing'
   })
   throw new Error('Missing Supabase environment variables')
 }

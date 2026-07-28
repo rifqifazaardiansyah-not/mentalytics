@@ -40,7 +40,7 @@ if (API_KEYS.length === 0) {
 } else {
   console.log('✅ API Keys available:', API_KEYS.length)
   API_KEYS.forEach((key, index) => {
-    console.log(`   Key #${index + 1}:`, key ? key.substring(0, 15) + '...' : '(empty)')
+    console.log(`   Key #${index + 1}:`, key ? '✅ Configured' : '❌ Empty')
   })
   
   // Calculate total capacity

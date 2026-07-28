@@ -36,3 +36,16 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Gemini Agent / AI Assistant
+.agents/
+skills-lock.json
+
+# Internal scripts (not needed in public repo)
+test-*.js
+verify-*.js
+
+# Internal documentation (not needed in public repo)
+tasks.md
+design.md
+requirements.md
