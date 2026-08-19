@@ -15,7 +15,7 @@ export function clearAllAIChatHistory() {
   console.log('🗑️ Cleared all AI chat history')
 }
 
-export default function AIChatPanel({ context, onClose, surveyScores = null }) {
+export default function AIChatPanel({ context, onClose, surveyScores = null, classSurveyData = null }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -80,8 +80,42 @@ export default function AIChatPanel({ context, onClose, surveyScores = null }) {
         
         console.log('📋 Injected survey scores context to chat session')
       }
+      
+      // Inject class survey data for solution context (if provided and first time)
+      if (context === 'solution' && classSurveyData && messages.length === 0) {
+        const contextMessage = `[DATA SURVEI KELAS: 
+Total responden: ${classSurveyData.totalResponses} siswa
+
+STATISTIK BULLYING:
+- Rata-rata skor: ${classSurveyData.avgBullying}/88
+- Rentang skor: ${classSurveyData.minBullying} - ${classSurveyData.maxBullying}
+- Terindikasi korban bullying (skor ≥22): ${classSurveyData.bullyingVictims} siswa (${classSurveyData.bullyingVictimsPercent}%)
+
+STATISTIK KECEMASAN:
+- Rata-rata skor: ${classSurveyData.avgAnxiety}/56
+- Rentang skor: ${classSurveyData.minAnxiety} - ${classSurveyData.maxAnxiety}
+- Kategori kecemasan:
+  * Tidak ada: ${classSurveyData.anxietyCategories.none} siswa
+  * Ringan: ${classSurveyData.anxietyCategories.mild} siswa
+  * Sedang: ${classSurveyData.anxietyCategories.moderate} siswa
+  * Berat: ${classSurveyData.anxietyCategories.severe} siswa
+  * Panik: ${classSurveyData.anxietyCategories.panic} siswa
+
+KORELASI BULLYING & KECEMASAN:
+- Koefisien korelasi (r): ${classSurveyData.correlation}
+- Arah: ${classSurveyData.correlationDirection}
+- Kekuatan: ${classSurveyData.correlationStrength}
+
+Data lengkap: ${JSON.stringify(classSurveyData.rawData)}]`
+        
+        // Add context to chat session internally (not shown to user)
+        geminiChatRef.current.addMessage('user', contextMessage)
+        geminiChatRef.current.addMessage('model', 'Terima kasih atas data survei kelas. Aku sudah memahami pola dan statistik dari hasil survei. Siap membantu menganalisis dan memberikan rekomendasi solusi.')
+        
+        console.log('📊 Injected class survey data context to chat session')
+      }
     }
-  }, [context, surveyScores, messages.length])
+  }, [context, surveyScores, classSurveyData, messages.length])
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -302,26 +336,32 @@ export default function AIChatPanel({ context, onClose, surveyScores = null }) {
               {context === 'solution' ? (
                 <>
                   <p className="text-sm text-ink-600 max-w-xs mx-auto">
-                    Butuh bantuan untuk mengembangkan ide rekomendasi? Aku siap jadi teman brainstorming!
+                    Butuh bantuan untuk mengembangkan ide rekomendasi? Aku sudah lihat data survei kelasmu dan siap jadi teman brainstorming!
                   </p>
                   <div className="flex flex-wrap gap-2 justify-center mt-6">
                     <button
-                      onClick={() => setInput('Bagaimana cara membuat rekomendasi yang baik?')}
+                      onClick={() => setInput('Apa arti hasil survey kelas ini?')}
                       className="px-3 py-2 text-xs bg-white border border-primary-400 rounded-lg hover:bg-primary-200 transition-colors"
                     >
-                      Cara membuat rekomendasi yang baik?
+                      Apa arti hasil survey ini?
                     </button>
                     <button
-                      onClick={() => setInput('Apa saja yang harus dipertimbangkan dalam merancang solusi?')}
+                      onClick={() => setInput('Apa pola yang terlihat dari data survey?')}
                       className="px-3 py-2 text-xs bg-white border border-primary-400 rounded-lg hover:bg-primary-200 transition-colors"
                     >
-                      Yang harus dipertimbangkan?
+                      Apa pola yang terlihat?
                     </button>
                     <button
-                      onClick={() => setInput('Bagaimana membedakan akar masalah dan gejala?')}
+                      onClick={() => setInput('Bagaimana korelasi bullying dan kecemasan di kelas ini?')}
                       className="px-3 py-2 text-xs bg-white border border-primary-400 rounded-lg hover:bg-primary-200 transition-colors"
                     >
-                      Akar masalah vs gejala?
+                      Bagaimana korelasinya?
+                    </button>
+                    <button
+                      onClick={() => setInput('Rekomendasi solusi apa yang cocok untuk kelas ini?')}
+                      className="px-3 py-2 text-xs bg-white border border-primary-400 rounded-lg hover:bg-primary-200 transition-colors"
+                    >
+                      Rekomendasi solusi?
                     </button>
                   </div>
                 </>

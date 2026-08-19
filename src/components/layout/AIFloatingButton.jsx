@@ -9,15 +9,18 @@ export default function AIFloatingButton({ context }) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
   const [surveyScores, setSurveyScores] = useState(null)
+  const [classSurveyData, setClassSurveyData] = useState(null)
 
-  // Fetch survey scores if context is hasil_tes
+  // Fetch survey data based on context
   useEffect(() => {
-    async function fetchSurveyScores() {
-      if (context === 'hasil_tes') {
-        try {
-          const siswaId = localStorage.getItem('mentalytics_student_id')
-          if (!siswaId) return
+    async function fetchSurveyData() {
+      try {
+        const siswaId = localStorage.getItem('mentalytics_student_id')
+        const kelasId = localStorage.getItem('mentalytics_kelas_id')
+        if (!siswaId || !kelasId) return
 
+        // For hasil_tes context: fetch individual scores
+        if (context === 'hasil_tes') {
           const { data, error } = await supabase
             .from('survey_results')
             .select('skor_bullying, skor_anxiety')
@@ -25,7 +28,6 @@ export default function AIFloatingButton({ context }) {
             .single()
 
           if (data && !error) {
-            // Helper function to get category
             const getBullyingCategory = (score) => {
               return score >= 22 ? 'Terindikasi korban bullying' : 'Tidak terindikasi'
             }
@@ -46,13 +48,113 @@ export default function AIFloatingButton({ context }) {
             })
             console.log('📊 Fetched survey scores for AI context:', data)
           }
-        } catch (err) {
-          console.error('Error fetching survey scores:', err)
         }
+        
+        // For solution context: fetch class survey data
+        if (context === 'solution') {
+          // Get all students in the class
+          const { data: students, error: studentsError } = await supabase
+            .from('siswa')
+            .select('id')
+            .eq('kelas_id', kelasId)
+
+          if (studentsError) throw studentsError
+          
+          const studentIds = students.map(s => s.id)
+
+          // Get survey results for all students
+          const { data: results, error: resultsError } = await supabase
+            .from('survey_results')
+            .select('skor_bullying, skor_anxiety')
+            .in('siswa_id', studentIds)
+
+          if (resultsError) throw resultsError
+
+          if (results && results.length > 0) {
+            // Calculate statistics
+            const totalResponses = results.length
+            const bullyingScores = results.map(r => r.skor_bullying)
+            const anxietyScores = results.map(r => r.skor_anxiety)
+            
+            const avgBullying = Math.round(bullyingScores.reduce((a, b) => a + b, 0) / totalResponses)
+            const avgAnxiety = Math.round(anxietyScores.reduce((a, b) => a + b, 0) / totalResponses)
+            
+            const maxBullying = Math.max(...bullyingScores)
+            const minBullying = Math.min(...bullyingScores)
+            const maxAnxiety = Math.max(...anxietyScores)
+            const minAnxiety = Math.min(...anxietyScores)
+            
+            // Count categories
+            const bullyingVictims = bullyingScores.filter(s => s >= 22).length
+            
+            const anxietyCategories = {
+              none: anxietyScores.filter(s => s < 14).length,
+              mild: anxietyScores.filter(s => s >= 14 && s <= 20).length,
+              moderate: anxietyScores.filter(s => s >= 21 && s <= 27).length,
+              severe: anxietyScores.filter(s => s >= 28 && s <= 41).length,
+              panic: anxietyScores.filter(s => s >= 42).length
+            }
+
+            // Calculate correlation (Pearson's r)
+            const meanBullying = bullyingScores.reduce((a, b) => a + b, 0) / totalResponses
+            const meanAnxiety = anxietyScores.reduce((a, b) => a + b, 0) / totalResponses
+            
+            let numerator = 0
+            let sumSqBullying = 0
+            let sumSqAnxiety = 0
+            
+            for (let i = 0; i < totalResponses; i++) {
+              const diffBullying = bullyingScores[i] - meanBullying
+              const diffAnxiety = anxietyScores[i] - meanAnxiety
+              numerator += diffBullying * diffAnxiety
+              sumSqBullying += diffBullying * diffBullying
+              sumSqAnxiety += diffAnxiety * diffAnxiety
+            }
+            
+            const correlation = numerator / Math.sqrt(sumSqBullying * sumSqAnxiety)
+            
+            // Determine correlation strength
+            let correlationStrength = ''
+            const absCorr = Math.abs(correlation)
+            if (absCorr >= 0.7) correlationStrength = 'sangat kuat'
+            else if (absCorr >= 0.5) correlationStrength = 'kuat'
+            else if (absCorr >= 0.3) correlationStrength = 'sedang'
+            else if (absCorr >= 0.1) correlationStrength = 'lemah'
+            else correlationStrength = 'sangat lemah'
+            
+            const correlationDirection = correlation > 0 ? 'positif' : 'negatif'
+
+            setClassSurveyData({
+              totalResponses,
+              avgBullying,
+              avgAnxiety,
+              maxBullying,
+              minBullying,
+              maxAnxiety,
+              minAnxiety,
+              bullyingVictims,
+              bullyingVictimsPercent: Math.round((bullyingVictims / totalResponses) * 100),
+              anxietyCategories,
+              correlation: correlation.toFixed(3),
+              correlationStrength,
+              correlationDirection,
+              rawData: results
+            })
+            
+            console.log('📊 Fetched class survey data for AI context:', {
+              totalResponses,
+              avgBullying,
+              avgAnxiety,
+              correlation: correlation.toFixed(3)
+            })
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching survey data:', err)
       }
     }
 
-    fetchSurveyScores()
+    fetchSurveyData()
   }, [context])
 
   return (
@@ -105,6 +207,7 @@ export default function AIFloatingButton({ context }) {
           context={context}
           onClose={() => setIsOpen(false)}
           surveyScores={surveyScores}
+          classSurveyData={classSurveyData}
         />
       )}
     </>
