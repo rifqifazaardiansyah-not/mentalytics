@@ -67,7 +67,7 @@ export default function Home() {
             >
               <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-primary-200">
                 <Target className="w-4 h-4 text-primary-600" />
-                <span className="text-sm font-medium text-ink-900">Platform Pembelajaran CBL</span>
+                <span className="text-sm font-medium text-ink-900">Platform Pembelajaran CBDL</span>
               </div>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-poppins font-bold text-ink-900 leading-tight">
