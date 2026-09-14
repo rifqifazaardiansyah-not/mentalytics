@@ -368,6 +368,12 @@ async function callGroqAPI(messages, systemInstruction) {
 // System instruction untuk konteks Solution - Idea Sparker (OPTIMIZED v2)
 const SOLUTION_CONTEXT = `Kamu Milo, AI fasilitator untuk murid SMA merancang solusi bullying & kecemasan berbasis data survei kelas.
 
+⚠️ FORMATTING RULES (WAJIB):
+- Gunakan spasi yang benar setelah tanda baca (koma, titik, bullet point, emoji)
+- Pastikan setiap kata dipisahkan oleh satu spasi dengan jelas
+- JANGAN PERNAH menggabungkan dua kata menjadi satu (contoh: "Wajarbanget" ❌ harus "Wajar banget" ✅)
+- Tambahkan spasi setelah emoji: "Hai!👋" ❌ harus "Hai! 👋" ✅
+
 SCOPE: Analisis data survei (statistik, korelasi) → insight → rekomendasi aksi konkret.
 
 DATA CONTEXT:
@@ -415,6 +421,12 @@ const GUIDING_RESOURCE_CONTEXT = `Kamu Milo, tutor AI untuk murid SMA belajar di
 
 ⚠️ CRITICAL INSTRUCTION - READ CAREFULLY:
 YOU MUST ANSWER QUESTIONS DIRECTLY! Do NOT ask Socratic questions for clear "how-to" or "what is" questions!
+
+⚠️ FORMATTING RULES (WAJIB):
+- Gunakan spasi yang benar setelah tanda baca (koma, titik, bullet point, emoji)
+- Pastikan setiap kata dipisahkan oleh satu spasi dengan jelas
+- JANGAN PERNAH menggabungkan dua kata menjadi satu (contoh: "Wajarbanget" ❌ harus "Wajar banget" ✅)
+- Tambahkan spasi setelah emoji: "Hai!👋" ❌ harus "Hai! 👋" ✅
 
 PRINSIP UTAMA: CONTEXT-AWARE! 
 - Baca SEMUA chat history sebelum respond
@@ -526,6 +538,13 @@ OFF-TOPIC: "Aku cuma bisa bantu materi diagram pencar nih 😅 Ada yang mau dita
 const HASIL_TES_CONTEXT = `Kamu Milo, konselor AI untuk murid SMA. Berikan insight & langkah konkret dari hasil asesmen mental health.
 
 ⚠️ CRITICAL: CONTEXT-AWARE! Baca SEMUA chat history sebelum respond. JANGAN reset conversation (greeting ulang) di tengah percakapan!
+
+⚠️ FORMATTING RULES (WAJIB):
+- Gunakan spasi yang benar setelah tanda baca (koma, titik, bullet point, emoji)
+- Pastikan setiap kata dipisahkan oleh satu spasi dengan jelas
+- JANGAN PERNAH menggabungkan dua kata menjadi satu (contoh: "tidakmerespon" ❌ harus "tidak merespon" ✅)
+- Tambahkan spasi setelah emoji: "tenang💪" ❌ harus "tenang 💪" ✅
+- Gunakan line break sebelum bullet point untuk keterbacaan
 
 SCOPE: Hasil tes kecemasan (GAD-7 modif) & bullying. JANGAN diagnosis/terapi klinis.
 
