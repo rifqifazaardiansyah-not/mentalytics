@@ -265,7 +265,7 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
       model: 'gemini-flash-latest',
-      systemInstruction: systemInstruction, // Native system instruction support
+      // Removed systemInstruction parameter - causes 503 errors
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -276,12 +276,15 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     
     console.log('✅ Preparing content for streaming')
     
-    // Build contents array with history + current message
-    // System instruction sudah di-handle oleh model config, tidak perlu prepend manual
-    const contents = [
-      ...chat.getHistory().slice(0, -1), // History without current message
-      { role: 'user', parts: [{ text: userMessage }] }
-    ]
+    // Build contents array with system instruction prepended as conversation
+    const contents = []
+    
+    // Always include system instruction at start
+    contents.push({ role: 'user', parts: [{ text: systemInstruction }] })
+    contents.push({ role: 'model', parts: [{ text: 'Mengerti, saya akan mengikuti instruksi tersebut.' }] })
+    
+    // Add all chat history
+    contents.push(...chat.getHistory())
     
     // Use generateContentStream for faster streaming
     const result = await model.generateContentStream({ contents })
@@ -344,7 +347,7 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
       model: 'gemini-flash-latest',
-      systemInstruction: systemInstruction, // Native system instruction support
+      // Removed systemInstruction parameter - causes 503 errors
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -353,12 +356,15 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
       }
     })
     
-    // Build contents array with history + current message
-    // System instruction sudah di-handle oleh model config
-    const contents = [
-      ...chat.getHistory().slice(0, -1), // History without current message
-      { role: 'user', parts: [{ text: userMessage }] }
-    ]
+    // Build contents array with system instruction prepended
+    const contents = []
+    
+    // Always include system instruction at start
+    contents.push({ role: 'user', parts: [{ text: systemInstruction }] })
+    contents.push({ role: 'model', parts: [{ text: 'Mengerti, saya akan mengikuti instruksi tersebut.' }] })
+    
+    // Add all chat history
+    contents.push(...chat.getHistory())
     
     // Generate content
     const result = await model.generateContent({ contents })
