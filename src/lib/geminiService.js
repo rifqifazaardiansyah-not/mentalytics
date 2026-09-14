@@ -382,11 +382,20 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
       }
       
       // Filter thinking artifacts from final response
+      // Only remove thinking patterns, keep the actual answer
       fullResponse = fullResponse
+        // Remove complete <think>...</think> blocks including content
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
-        .replace(/Here'?s?\s*a\s*thinking\s*process:?.*?(?=Hai!|$)/gis, '')
-        .replace(/\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify).*?(?=Hai!|$)/gis, '')
+        // Remove any remaining think tags
+        .replace(/<\/?think>/gi, '')
+        // Remove "Here's a thinking process:" header only
+        .replace(/Here'?s?\s*a\s*thinking\s*process:?\s*/gi, '')
+        // Remove numbered thinking bullet points (but keep actual content after)
+        .replace(/^\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify)[^:]*:\s*/gmi, '')
+        // Remove checkmarks
         .replace(/^✅\s*/gm, '')
+        // Remove extra whitespace but keep structure
+        .replace(/\n{3,}/g, '\n\n')
         .trim()
       
       chat.addMessage('model', fullResponse)
@@ -533,9 +542,11 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
         // Filter thinking artifacts from final response
         fullResponse = fullResponse
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
-          .replace(/Here'?s?\s*a\s*thinking\s*process:?.*?(?=Hai!|$)/gis, '')
-          .replace(/\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify).*?(?=Hai!|$)/gis, '')
+          .replace(/<\/?think>/gi, '')
+          .replace(/Here'?s?\s*a\s*thinking\s*process:?\s*/gi, '')
+          .replace(/^\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify)[^:]*:\s*/gmi, '')
           .replace(/^✅\s*/gm, '')
+          .replace(/\n{3,}/g, '\n\n')
           .trim()
         
         // Add assistant response to history
