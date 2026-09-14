@@ -127,14 +127,11 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'qwen/qwen3.6-27b', // Fast, free preview model (500 T/sec)
+      model: 'gemma2-9b-it', // Gemma2 - no CoT artifacts, fast & clean
       messages: groqMessages,
       temperature: 0.7,
-      max_tokens: 1000, // Reduced from 2048 to fit free tier limit
-      stream: true, // Enable streaming
-      // Disable Chain-of-Thought reasoning to prevent <think> tags
-      stop: ['<think>', 'Here\'s a thinking'],
-      response_format: { type: "text" }
+      max_tokens: 1000,
+      stream: true,
     })
   })
   
@@ -381,35 +378,8 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
         }
       }
       
-      // Debug: Log raw response before filtering
-      console.log('🔍 Raw response length:', fullResponse.length)
-      console.log('🔍 Raw response preview:', fullResponse.substring(0, 200))
-      
-      // Filter thinking artifacts from final response
-      // Only remove thinking patterns, keep the actual answer
-      const originalResponse = fullResponse
-      fullResponse = fullResponse
-        // Remove complete <think>...</think> blocks including content
-        .replace(/<think>[\s\S]*?<\/think>/gi, '')
-        // Remove any remaining think tags
-        .replace(/<\/?think>/gi, '')
-        // Remove "Here's a thinking process:" header only
-        .replace(/Here'?s?\s*a\s*thinking\s*process:?\s*/gi, '')
-        // Remove numbered thinking bullet points (but keep actual content after)
-        .replace(/^\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify)[^:]*:\s*/gmi, '')
-        // Remove checkmarks
-        .replace(/^✅\s*/gm, '')
-        // Remove extra whitespace but keep structure
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
-      
-      console.log('✅ Filtered response length:', fullResponse.length)
-      console.log('✅ Filtered response preview:', fullResponse.substring(0, 200))
-      
-      if (!fullResponse && originalResponse) {
-        console.warn('⚠️  All content was filtered! Using original response.')
-        fullResponse = originalResponse
-      }
+      // Simple cleanup - no aggressive filtering needed for Gemma2
+      fullResponse = fullResponse.trim()
       
       chat.addMessage('model', fullResponse)
       console.log('✅ Groq response completed (primary)')
@@ -552,28 +522,8 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
           }
         }
         
-        // Debug: Log raw response before filtering
-        console.log('🔍 Raw response length:', fullResponse.length)
-        console.log('🔍 Raw response preview:', fullResponse.substring(0, 200))
-        
-        // Filter thinking artifacts from final response
-        const originalResponse = fullResponse
-        fullResponse = fullResponse
-          .replace(/<think>[\s\S]*?<\/think>/gi, '')
-          .replace(/<\/?think>/gi, '')
-          .replace(/Here'?s?\s*a\s*thinking\s*process:?\s*/gi, '')
-          .replace(/^\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify)[^:]*:\s*/gmi, '')
-          .replace(/^✅\s*/gm, '')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim()
-        
-        console.log('✅ Filtered response length:', fullResponse.length)
-        console.log('✅ Filtered response preview:', fullResponse.substring(0, 200))
-        
-        if (!fullResponse && originalResponse) {
-          console.warn('⚠️  All content was filtered! Using original response.')
-          fullResponse = originalResponse
-        }
+        // Simple cleanup - no aggressive filtering needed for Gemma2
+        fullResponse = fullResponse.trim()
         
         // Add assistant response to history
         chat.addMessage('model', fullResponse)
