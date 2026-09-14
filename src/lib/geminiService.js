@@ -59,8 +59,15 @@ function getNextGroqKey() {
   return key
 }
 
+// Force use Groq if Gemini is unstable (set to true to skip Gemini entirely)
+const FORCE_USE_GROQ = import.meta.env.VITE_FORCE_USE_GROQ === 'true'
+
 console.log('🔑 Gemini API Keys loaded:', API_KEYS.length, 'keys available')
 console.log('🔑 Groq API Keys loaded:', GROQ_API_KEYS.length, 'keys available (fallback)')
+
+if (FORCE_USE_GROQ) {
+  console.log('⚡ FORCE_USE_GROQ enabled - Groq will be used as primary')
+}
 
 if (API_KEYS.length === 0 && GROQ_API_KEYS.length === 0) {
   console.error('❌ No AI API keys found!')
@@ -328,6 +335,56 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     context === 'solution' ? SOLUTION_CONTEXT :
     context === 'hasil_tes' ? HASIL_TES_CONTEXT :
     GUIDING_RESOURCE_CONTEXT
+  
+  // If FORCE_USE_GROQ is enabled, skip Gemini and use Groq directly
+  if (FORCE_USE_GROQ && GROQ_API_KEYS.length > 0) {
+    console.log('⚡ Force using Groq (skipping Gemini)...')
+    
+    try {
+      chat.addMessage('user', userMessage)
+      
+      const response = await callGroqAPI(chat.getHistory(), systemInstruction)
+      
+      // Parse SSE stream from Groq
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let fullResponse = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+            
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices[0]?.delta?.content || ''
+              if (content) {
+                fullResponse += content
+                yield content
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+      
+      chat.addMessage('model', fullResponse)
+      console.log('✅ Groq response completed (primary)')
+      return
+      
+    } catch (error) {
+      console.error('❌ Groq (primary) failed:', error.message)
+      // Fall through to try Gemini as backup
+    }
+  }
   
   try {
     console.log('📤 Sending message to Gemini:', userMessage)
