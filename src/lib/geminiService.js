@@ -127,7 +127,7 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gemma2-9b-it', // Gemma2 - no CoT artifacts, fast & clean
+      model: 'openai/gpt-oss-20b', // FREE production model - fast & clean
       messages: groqMessages,
       temperature: 0.7,
       max_tokens: 1000,
