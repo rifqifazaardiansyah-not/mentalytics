@@ -108,6 +108,35 @@ function postProcessResponse(text) {
   cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Single-level braces
   cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Run twice for nested braces
   
+  // 13. Fix missing spaces (words stuck together)
+  // Pattern 1: lowercase+uppercase (e.g., "Wajarbanget" → "Wajar banget")
+  cleaned = cleaned.replace(/([a-z])([A-Z])/g, '$1 $2')
+  
+  // Pattern 2: Known Indonesian compound words that should be split
+  cleaned = cleaned
+    .replace(/([a-z])banget/gi, '$1 banget')        // Wajarbanget → Wajar banget
+    .replace(/beban([a-z])/gi, 'beban $1')          // bebanemosional → beban emosional  
+    .replace(/Cari([A-Z])/g, 'Cari $1')             // CariSatu → Cari Satu
+    .replace(/cari([a-z]{3,})/g, 'cari $1')         // carisatu → cari satu
+  
+  // Pattern 3: word+punctuation+word without space (e.g., "ini,tapi" → "ini, tapi")
+  cleaned = cleaned.replace(/([a-zA-Z])([,;:])([a-zA-Z])/g, '$1$2 $3')
+  
+  // Pattern 4: punctuation+word without space (e.g., ",tapi" → ", tapi")
+  cleaned = cleaned.replace(/([,;:.!?])([a-zA-Z])/g, '$1 $2')
+  
+  // Clean up excessive spaces from above replacements
+  cleaned = cleaned.replace(/\s{2,}/g, ' ')
+  
+  // 14. Fix bullet points without line breaks
+  // Ensure bullet points are on new lines
+  cleaned = cleaned.replace(/([.!?])\s*•/g, '$1\n•')  // After sentence, new line before bullet
+  cleaned = cleaned.replace(/•\s*([^•\n])/g, '• $1')  // Space after bullet
+  
+  // 15. Ensure proper line breaks before bullet lists
+  // If text before bullet doesn't end with newline, add one
+  cleaned = cleaned.replace(/([^\n])\n•/g, '$1\n\n•')  // Double newline before first bullet
+  
   return cleaned.trim()
 }
 
