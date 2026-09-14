@@ -324,70 +324,20 @@ export function createHasilTesChat() {
   return new ChatSession()
 }
 
+// Helper function: sleep/delay
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 // Function untuk chat dengan streaming menggunakan Google SDK
 export async function* streamGeminiResponse(chat, userMessage, context = 'guiding_resource', retryCount = 0) {
-  const MAX_RETRIES = API_KEYS.length // Try all available keys
+  const MAX_RETRIES = API_KEYS.length * 2 // Try each key twice
   
   // Select system instruction based on context (DECLARE EARLY!)
   const systemInstruction = 
     context === 'solution' ? SOLUTION_CONTEXT :
     context === 'hasil_tes' ? HASIL_TES_CONTEXT :
     GUIDING_RESOURCE_CONTEXT
-  
-  // If FORCE_USE_GROQ is enabled, skip Gemini and use Groq directly
-  if (FORCE_USE_GROQ && GROQ_API_KEYS.length > 0) {
-    console.log('⚡ Force using Groq (skipping Gemini)...')
-    
-    try {
-      chat.addMessage('user', userMessage)
-      
-      const response = await callGroqAPI(chat.getHistory(), systemInstruction)
-      
-      // Parse SSE stream from Groq
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let fullResponse = ''
-      
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6)
-            if (data === '[DONE]') continue
-            
-            try {
-              const parsed = JSON.parse(data)
-              const content = parsed.choices[0]?.delta?.content || ''
-              
-              if (content) {
-                // Just accumulate - we'll filter at the end
-                fullResponse += content
-                yield content
-              }
-            } catch (e) {
-              // Skip invalid JSON
-            }
-          }
-        }
-      }
-      
-      // Simple cleanup - no aggressive filtering needed for Gemma2
-      fullResponse = fullResponse.trim()
-      
-      chat.addMessage('model', fullResponse)
-      console.log('✅ Groq response completed (primary)')
-      return
-      
-    } catch (error) {
-      console.error('❌ Groq (primary) failed:', error.message)
-      // Fall through to try Gemini as backup
-    }
-  }
   
   try {
     console.log('📤 Sending message to Gemini:', userMessage)
@@ -452,103 +402,34 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     console.error('Error type:', error.constructor.name)
     console.error('Error message:', error.message)
     
-    // Handle 503 (high demand) - Try Groq fallback
-    if ((error.message?.includes('503') || error.message?.includes('high demand')) && GROQ_API_KEYS.length > 0) {
-      console.log('🔄 Gemini overloaded (503), switching to Groq fallback...')
-      
-      try {
-        // Remove last user message to avoid duplicate
-        chat.history.pop()
-        
-        // Add back user message
-        chat.addMessage('user', userMessage)
-        
-        // Call Groq API
-        const response = await callGroqAPI(chat.getHistory(), systemInstruction)
-        
-        // Parse SSE stream from Groq
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let fullResponse = ''
-        
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          
-          const chunk = decoder.decode(value)
-          const lines = chunk.split('\n')
-          
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6)
-              if (data === '[DONE]') continue
-              
-              try {
-                const parsed = JSON.parse(data)
-                let content = parsed.choices[0]?.delta?.content || ''
-                
-                if (content) {
-                  // Aggressively filter Qwen's thinking artifacts
-                  content = content
-                    // Remove complete <think>...</think> blocks
-                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
-                    // Remove opening <think> and everything after until newline
-                    .replace(/<think>[^\n]*/gi, '')
-                    // Remove closing </think>
-                    .replace(/<\/think>/gi, '')
-                    // Remove "Here's a thinking process:" and similar
-                    .replace(/Here'?s?\s+a\s+thinking\s+process:?/gi, '')
-                    // Remove numbered thinking steps
-                    .replace(/^\d+\.\s+(Analyze|Check|Formulate|Final|Self-Correction|Output|Done|Proceed).*$/gmi, '')
-                    // Remove checkmarks and "Done" artifacts
-                    .replace(/^✅\s*/gm, '')
-                    .replace(/^\[Done\]\s*/gmi, '')
-                    .replace(/^\[Output.*\]\s*/gmi, '')
-                    // Clean up extra whitespace
-                    .replace(/\n{3,}/g, '\n\n')
-                    .trim()
-                  
-                  if (content) {
-                    fullResponse += content
-                    yield content
-                  }
-                }
-              } catch (e) {
-                // Skip invalid JSON
-              }
-            }
-          }
-        }
-        
-        // Simple cleanup - no aggressive filtering needed for Gemma2
-        fullResponse = fullResponse.trim()
-        
-        // Add assistant response to history
-        chat.addMessage('model', fullResponse)
-        
-        console.log('✅ Groq fallback succeeded!')
-        return
-        
-      } catch (groqError) {
-        console.error('❌ Groq fallback also failed:', groqError)
-        // Continue to error messages below
-      }
-    }
+    // Handle 503 (high demand) or 429 (rate limit) - RETRY with exponential backoff
+    const is503 = error.message?.includes('503') || error.message?.includes('high demand')
+    const is429 = error.message?.includes('429') || error.message?.includes('quota')
     
-    // Retry with next API key if quota exceeded (429) or rate limit
-    if ((error.message?.includes('429') || error.message?.includes('quota')) && retryCount < MAX_RETRIES) {
-      console.log(`🔄 Retrying with next API key... (Attempt ${retryCount + 1}/${MAX_RETRIES})`)
+    if ((is503 || is429) && retryCount < MAX_RETRIES) {
+      // Calculate delay: 1s, 2s, 3s, 4s... (linear backoff)
+      const delayMs = (retryCount + 1) * 1000
+      
+      console.log(`🔄 ${is503 ? '503 High Demand' : '429 Rate Limit'} - Retrying in ${delayMs}ms...`)
+      console.log(`   Attempt ${retryCount + 1}/${MAX_RETRIES}`)
+      
+      // Wait before retry
+      await sleep(delayMs)
+      
       // Remove last user message to avoid duplicate
       chat.history.pop()
+      
       // Retry with next key
       yield* streamGeminiResponse(chat, userMessage, context, retryCount + 1)
-    } else if (error.message?.includes('429') || error.message?.includes('quota')) {
-      // All keys exhausted, provide helpful error message
-      const fallbackMessage = `Maaf, Milo sedang sibuk membantu banyak teman sekaligus 😅\n\nCoba lagi dalam beberapa menit ya!\n\n(Rate limit: Terlalu banyak request)`
+      return
+    }
+    
+    // All retries exhausted
+    if (is503) {
+      const fallbackMessage = `Maaf, server Gemini sedang sangat ramai 😅\n\nSudah coba ${retryCount + 1} kali dengan ${API_KEYS.length} API key berbeda.\n\nCoba lagi dalam 2-3 menit ya! 🙏`
       yield fallbackMessage
-    } else if (error.message?.includes('503') || error.message?.includes('high demand')) {
-      // 503 but no Groq fallback available
-      const fallbackMessage = `Maaf, server AI sedang ramai 😅\n\nCoba lagi dalam 1-2 menit ya!\n\n(503: Server experiencing high demand)\n\n💡 Tip: Tambahkan VITE_GROQ_API_KEY di .env untuk auto fallback`
+    } else if (is429) {
+      const fallbackMessage = `Maaf, Milo sedang sibuk membantu banyak teman sekaligus 😅\n\nSemua ${API_KEYS.length} API key sudah mencapai limit.\n\nCoba lagi dalam 1 menit ya! 🙏`
       yield fallbackMessage
     } else {
       // Generic error
