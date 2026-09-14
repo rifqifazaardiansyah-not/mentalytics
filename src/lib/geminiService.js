@@ -99,8 +99,11 @@ async function callGroqAPI(messages, systemInstruction) {
   const apiKey = getNextGroqKey()
   
   // Build messages array for Groq (OpenAI format)
+  // Simplify system instruction to avoid token limits
+  const simplifiedSystemInstruction = systemInstruction.substring(0, 1000) + '\n\nBahas sesuai konteks di atas dengan bahasa Indonesia yang ramah.'
+  
   const groqMessages = [
-    { role: 'system', content: systemInstruction },
+    { role: 'system', content: simplifiedSystemInstruction },
     ...messages.map(msg => ({
       role: msg.role === 'model' ? 'assistant' : 'user',
       content: msg.parts[0].text
@@ -108,6 +111,7 @@ async function callGroqAPI(messages, systemInstruction) {
   ]
   
   console.log('🦙 Calling Groq API (fallback)...')
+  console.log('   Messages count:', groqMessages.length)
   
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -125,7 +129,9 @@ async function callGroqAPI(messages, systemInstruction) {
   })
   
   if (!response.ok) {
-    throw new Error(`Groq API error: ${response.status} ${response.statusText}`)
+    const errorText = await response.text()
+    console.error('Groq API error response:', errorText)
+    throw new Error(`Groq API error: ${response.status} - ${errorText.substring(0, 200)}`)
   }
   
   return response
