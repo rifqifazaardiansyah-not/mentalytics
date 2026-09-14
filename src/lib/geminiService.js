@@ -3,6 +3,115 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 // ============================================================================
+// TEXT POST-PROCESSING - Clean up LaTeX, Markdown, and formatting artifacts
+// ============================================================================
+
+/**
+ * POST-PROCESS AI RESPONSE
+ * 
+ * Cleans up common formatting issues from AI responses:
+ * - LaTeX math notation: $r > 0$ → r > 0
+ * - Double dollar LaTeX: $$equation$$ → equation
+ * - Markdown bold: **text** → text (keep for emphasis)
+ * - Markdown italic: *text* → text (keep for emphasis)
+ * - LaTeX parentheses: \( \) and \[ \]
+ * - Excessive whitespace
+ * - Broken Unicode characters
+ * 
+ * @param {string} text - Raw AI response text
+ * @returns {string} - Cleaned text ready for display
+ */
+function postProcessResponse(text) {
+  if (!text) return text
+  
+  let cleaned = text
+  
+  // 1. Remove inline LaTeX math notation: $...$
+  // Match single $ pairs, but not $$ (which we handle separately)
+  cleaned = cleaned.replace(/\$([^$\n]+?)\$/g, (match, content) => {
+    // Remove LaTeX commands like \times, \leq, etc.
+    let clean = content
+      .replace(/\\times/g, '×')
+      .replace(/\\div/g, '÷')
+      .replace(/\\pm/g, '±')
+      .replace(/\\leq/g, '≤')
+      .replace(/\\geq/g, '≥')
+      .replace(/\\ne/g, '≠')
+      .replace(/\\approx/g, '≈')
+      .replace(/\\cdot/g, '·')
+      .replace(/\\[a-zA-Z]+/g, '') // Remove other LaTeX commands
+      .trim()
+    
+    return clean
+  })
+  
+  // 2. Remove display LaTeX: $$...$$
+  cleaned = cleaned.replace(/\$\$([^$]+?)\$\$/g, (match, content) => {
+    let clean = content
+      .replace(/\\times/g, '×')
+      .replace(/\\div/g, '÷')
+      .replace(/\\[a-zA-Z]+/g, '')
+      .trim()
+    return clean
+  })
+  
+  // 3. Remove LaTeX parentheses: \( ... \) and \[ ... \]
+  cleaned = cleaned.replace(/\\\(([^)]+?)\\\)/g, '$1')
+  cleaned = cleaned.replace(/\\\[([^\]]+?)\\\]/g, '$1')
+  
+  // 4. Clean up common LaTeX symbols that leaked
+  cleaned = cleaned
+    .replace(/\\_/g, '_')                    // Escaped underscore
+    .replace(/\\#/g, '#')                    // Escaped hash
+    .replace(/\\\$/g, '$')                   // Escaped dollar (actual currency)
+    .replace(/\\%/g, '%')                    // Escaped percent
+    .replace(/\\\^/g, '^')                   // Escaped caret
+    .replace(/\\&/g, '&')                    // Escaped ampersand
+  
+  // 5. Fix common mathematical notation to readable text
+  cleaned = cleaned
+    .replace(/([a-zA-Z])\s*=\s*([0-9.-]+)/g, '$1 = $2')  // Fix spacing around equals
+    .replace(/([0-9])\s*([<>≤≥])\s*([0-9])/g, '$1 $2 $3') // Fix comparison operators
+  
+  // 6. Remove excessive whitespace
+  cleaned = cleaned
+    .replace(/\n{3,}/g, '\n\n')              // Max 2 consecutive newlines
+    .replace(/[ \t]{2,}/g, ' ')              // Multiple spaces to single
+    .replace(/^\s+|\s+$/g, '')               // Trim start/end
+  
+  // 7. Fix broken bullet points (be careful not to break **bold**)
+  cleaned = cleaned
+    .replace(/^[\s-]*•[\s-]*/gm, '• ')        // Normalize existing bullets
+    .replace(/^(\s*)\*\s+([^*])/gm, '$1• $2') // Single * at line start = bullet (not bold)
+  
+  // 8. Remove markdown code blocks if they leaked (keep content)
+  cleaned = cleaned.replace(/```[a-z]*\n?([\s\S]*?)```/g, '$1')
+  
+  // 9. Keep markdown bold/italic but fix excessive nesting
+  // **text** stays as **text** (UI handles rendering)
+  // But fix: ****text**** → **text**
+  cleaned = cleaned.replace(/\*{3,}([^*]+)\*{3,}/g, '**$1**')
+  
+  // 10. Fix common Unicode issues
+  cleaned = cleaned
+    .replace(/â€"/g, '—')                    // Em dash
+    .replace(/â€"/g, '–')                    // En dash
+    .replace(/â€˜/g, "'")                    // Left single quote
+    .replace(/â€™/g, "'")                    // Right single quote
+    .replace(/â€œ/g, '"')                    // Left double quote
+    .replace(/â€/g, '"')                     // Right double quote
+  
+  // 11. Normalize fractions and remove leftover LaTeX braces
+  cleaned = cleaned.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, '($1/$2)')
+  
+  // 12. Remove leftover curly braces from complex LaTeX
+  cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Single-level braces
+  cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Run twice for nested braces
+  
+  return cleaned.trim()
+}
+
+// ============================================================================
 // MODEL CONFIGURATION - Hybrid Model Switching Strategy
 // ============================================================================
 
@@ -567,7 +676,10 @@ export async function* streamGeminiResponse(
               
               if (content) {
                 fullResponse += content
-                yield content
+                
+                // Post-process Groq chunk before yielding
+                const cleanedContent = postProcessResponse(content)
+                yield cleanedContent
               }
             } catch (e) {
               // Skip invalid JSON
@@ -576,8 +688,9 @@ export async function* streamGeminiResponse(
         }
       }
       
-      fullResponse = fullResponse.trim()
-      chat.addMessage('model', fullResponse)
+      // Post-process full response before storing
+      const cleanedResponse = postProcessResponse(fullResponse.trim())
+      chat.addMessage('model', cleanedResponse)
       console.log('✅ Groq response completed (primary mode)')
       return
       
@@ -641,14 +754,21 @@ export async function* streamGeminiResponse(
     for await (const chunk of result.stream) {
       const chunkText = chunk.text()
       fullResponse += chunkText
-      console.log('📥 Chunk:', chunkText.substring(0, 50) + '...')
-      yield chunkText // Yield langsung untuk UI real-time
+      
+      // Post-process chunk before yielding (clean up LaTeX/Markdown artifacts)
+      const cleanedChunk = postProcessResponse(chunkText)
+      
+      console.log('📥 Chunk:', cleanedChunk.substring(0, 50) + '...')
+      yield cleanedChunk // Yield cleaned text for UI real-time
     }
     
     console.log('✅ Stream completed')
     
-    // Add assistant response to history
-    chat.addMessage('model', fullResponse)
+    // Post-process full response before storing (for consistency)
+    const cleanedResponse = postProcessResponse(fullResponse)
+    
+    // Add cleaned assistant response to history
+    chat.addMessage('model', cleanedResponse)
     
   } catch (error) {
     console.error('❌ Error streaming Gemini response:', error)
@@ -767,10 +887,13 @@ export async function sendGeminiMessage(
     const result = await model.generateContent({ contents })
     const text = result.response.text()
     
-    // Add assistant response to history
-    chat.addMessage('model', text)
+    // Post-process response before storing and returning
+    const cleanedText = postProcessResponse(text)
     
-    return text
+    // Add cleaned assistant response to history
+    chat.addMessage('model', cleanedText)
+    
+    return cleanedText
   } catch (error) {
     console.error('❌ Error sending Gemini message:', error)
     throw error
@@ -787,8 +910,9 @@ export const CONTEXTS = {
 // Export model configuration and utilities
 export { 
   ChatSession,
-  MODEL_CONFIG,      // Model IDs untuk reference
-  selectGeminiModel  // Manual model selection jika diperlukan
+  MODEL_CONFIG,           // Model IDs untuk reference
+  selectGeminiModel,      // Manual model selection jika diperlukan
+  postProcessResponse     // Text cleaning utility (for testing/debugging)
 }
 
 export default {
