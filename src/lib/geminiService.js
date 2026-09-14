@@ -331,13 +331,67 @@ function sleep(ms) {
 
 // Function untuk chat dengan streaming menggunakan Google SDK
 export async function* streamGeminiResponse(chat, userMessage, context = 'guiding_resource', retryCount = 0) {
-  const MAX_RETRIES = API_KEYS.length * 2 // Try each key twice
+  const MAX_GEMINI_RETRIES = 2 // Only try Gemini twice before giving up
   
   // Select system instruction based on context (DECLARE EARLY!)
   const systemInstruction = 
     context === 'solution' ? SOLUTION_CONTEXT :
     context === 'hasil_tes' ? HASIL_TES_CONTEXT :
     GUIDING_RESOURCE_CONTEXT
+  
+  // If FORCE_USE_GROQ is enabled, skip Gemini entirely and use Groq directly
+  if (FORCE_USE_GROQ && GROQ_API_KEYS.length > 0) {
+    console.log('⚡ FORCE_USE_GROQ enabled - Using Groq directly, skipping Gemini')
+    
+    try {
+      chat.addMessage('user', userMessage)
+      
+      const response = await callGroqAPI(chat.getHistory(), systemInstruction)
+      
+      // Parse SSE stream from Groq
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let fullResponse = ''
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+            
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices[0]?.delta?.content || ''
+              
+              if (content) {
+                fullResponse += content
+                yield content
+              }
+            } catch (e) {
+              // Skip invalid JSON
+            }
+          }
+        }
+      }
+      
+      fullResponse = fullResponse.trim()
+      chat.addMessage('model', fullResponse)
+      console.log('✅ Groq response completed (primary mode)')
+      return
+      
+    } catch (error) {
+      console.error('❌ Groq (primary) failed:', error.message)
+      const fallbackMessage = `Maaf, ada masalah saat menghubungi AI. Coba lagi ya! 😅\n\n(Error: ${error.message?.substring(0, 100) || 'Unknown error'})`
+      yield fallbackMessage
+      return
+    }
+  }
   
   try {
     console.log('📤 Sending message to Gemini:', userMessage)
@@ -406,12 +460,12 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     const is503 = error.message?.includes('503') || error.message?.includes('high demand')
     const is429 = error.message?.includes('429') || error.message?.includes('quota')
     
-    if ((is503 || is429) && retryCount < MAX_RETRIES) {
+    if ((is503 || is429) && retryCount < MAX_GEMINI_RETRIES) {
       // Calculate delay: 1s, 2s, 3s, 4s... (linear backoff)
       const delayMs = (retryCount + 1) * 1000
       
       console.log(`🔄 ${is503 ? '503 High Demand' : '429 Rate Limit'} - Retrying in ${delayMs}ms...`)
-      console.log(`   Attempt ${retryCount + 1}/${MAX_RETRIES}`)
+      console.log(`   Attempt ${retryCount + 1}/${MAX_GEMINI_RETRIES}`)
       
       // Wait before retry
       await sleep(delayMs)
