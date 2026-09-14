@@ -132,6 +132,9 @@ async function callGroqAPI(messages, systemInstruction) {
       temperature: 0.7,
       max_tokens: 1000, // Reduced from 2048 to fit free tier limit
       stream: true, // Enable streaming
+      // Disable Chain-of-Thought reasoning to prevent <think> tags
+      stop: ['<think>', 'Here\'s a thinking'],
+      response_format: { type: "text" }
     })
   })
   
@@ -364,33 +367,12 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
             
             try {
               const parsed = JSON.parse(data)
-              let content = parsed.choices[0]?.delta?.content || ''
+              const content = parsed.choices[0]?.delta?.content || ''
               
               if (content) {
-                // Aggressively filter Qwen's thinking artifacts
-                content = content
-                  // Remove complete <think>...</think> blocks
-                  .replace(/<think>[\s\S]*?<\/think>/gi, '')
-                  // Remove opening <think> and everything after until newline
-                  .replace(/<think>[^\n]*/gi, '')
-                  // Remove closing </think>
-                  .replace(/<\/think>/gi, '')
-                  // Remove "Here's a thinking process:" and similar
-                  .replace(/Here'?s?\s+a\s+thinking\s+process:?/gi, '')
-                  // Remove numbered thinking steps
-                  .replace(/^\d+\.\s+(Analyze|Check|Formulate|Final|Self-Correction|Output|Done|Proceed).*$/gmi, '')
-                  // Remove checkmarks and "Done" artifacts
-                  .replace(/^✅\s*/gm, '')
-                  .replace(/^\[Done\]\s*/gmi, '')
-                  .replace(/^\[Output.*\]\s*/gmi, '')
-                  // Clean up extra whitespace
-                  .replace(/\n{3,}/g, '\n\n')
-                  .trim()
-                
-                if (content) {
-                  fullResponse += content
-                  yield content
-                }
+                // Just accumulate - we'll filter at the end
+                fullResponse += content
+                yield content
               }
             } catch (e) {
               // Skip invalid JSON
@@ -398,6 +380,14 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
           }
         }
       }
+      
+      // Filter thinking artifacts from final response
+      fullResponse = fullResponse
+        .replace(/<think>[\s\S]*?<\/think>/gi, '')
+        .replace(/Here'?s?\s*a\s*thinking\s*process:?.*?(?=Hai!|$)/gis, '')
+        .replace(/\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify).*?(?=Hai!|$)/gis, '')
+        .replace(/^✅\s*/gm, '')
+        .trim()
       
       chat.addMessage('model', fullResponse)
       console.log('✅ Groq response completed (primary)')
@@ -539,6 +529,14 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
             }
           }
         }
+        
+        // Filter thinking artifacts from final response
+        fullResponse = fullResponse
+          .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .replace(/Here'?s?\s*a\s*thinking\s*process:?.*?(?=Hai!|$)/gis, '')
+          .replace(/\d+\.\s*\*?\*?(Analyze|Check|Formulate|Final|Match|Verify).*?(?=Hai!|$)/gis, '')
+          .replace(/^✅\s*/gm, '')
+          .trim()
         
         // Add assistant response to history
         chat.addMessage('model', fullResponse)
