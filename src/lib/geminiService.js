@@ -127,7 +127,7 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant', // Fast, free, and currently active
+      model: 'qwen/qwen3.6-27b', // Fast, free preview model (500 T/sec)
       messages: groqMessages,
       temperature: 0.7,
       max_tokens: 2048,
