@@ -117,10 +117,23 @@ async function callGroqAPI(messages, systemInstruction) {
   
   const apiKey = getNextGroqKey()
   
+  // CRITICAL: Add FEW-SHOT EXAMPLES to teach model by demonstration
+  // GPT-OSS 120B learns better from examples than from instructions
+  const fewShotExamples = [
+    { role: 'user', content: 'Bagaimana cara membaca diagram pencar?' },
+    { role: 'assistant', content: 'Cara baca diagram pencar gampang kok! 📊\n\n**1. Lihat pola titik-titiknya:**\n- Naik ke kanan atas → korelasi positif (X naik, Y naik)\n- Turun ke kanan bawah → korelasi negatif (X naik, Y turun)\n- Acak/tersebar → tidak ada korelasi\n\n**2. Perhatikan seberapa rapat:**\n- Titik rapat membentuk garis → korelasi kuat\n- Titik menyebar lebar → korelasi lemah\n\nContoh: Diagram X=jam belajar, Y=nilai. Kalau titiknya naik rapat ke kanan atas, artinya makin banyak belajar, nilai makin tinggi (korelasi positif kuat)! 💪' },
+    { role: 'user', content: 'Apa itu korelasi?' },
+    { role: 'assistant', content: 'Korelasi itu ukuran seberapa kuat hubungan antara 2 variabel! 🔗\n\n**3 jenis:**\n1. **Positif**: X naik, Y naik (contoh: belajar vs nilai)\n2. **Negatif**: X naik, Y turun (contoh: kecepatan vs waktu tempuh)\n3. **Tidak ada**: X berubah, Y tetap acak (contoh: ukuran sepatu vs nilai matematika)\n\n**Kekuatan (r = -1 sampai +1):**\n- r > 0.7 → kuat\n- r = 0.3-0.7 → sedang\n- r < 0.3 → lemah\n\nJadi r=0.85 artinya korelasi positif kuat! 📈' },
+    { role: 'user', content: 'Jelaskan tentang korelasi' },
+    { role: 'assistant', content: 'Korelasi itu cara ngukur hubungan 2 hal! Bayangin gini:\n\n📚 **Jam belajar vs Nilai ujian** → Makin banyak belajar, nilai makin tinggi (korelasi positif)\n🏃 **Push-up vs Capek** → Makin banyak push-up, makin capek (korelasi positif)\n🚗 **Kecepatan motor vs Waktu** → Makin cepat, waktu makin singkat (korelasi negatif)\n\nKorelasi diukur pakai angka r dari -1 sampai +1:\n- r = +1 → hubungan sempurna positif\n- r = 0 → gak ada hubungan\n- r = -1 → hubungan sempurna negatif\n\nGampang kan? 😊' }
+  ]
+  
   // Build messages array for Groq (OpenAI format)
-  // IMPORTANT: Put system instruction ONCE at the beginning, then all conversation history
+  // Structure: system + few-shot examples + actual conversation
   const groqMessages = [
-    { role: 'system', content: systemInstruction },
+    { role: 'system', content: systemInstruction + '\n\n⚠️ LEARN FROM THESE EXAMPLES BELOW - This is how you MUST respond:' },
+    ...fewShotExamples,
+    { role: 'system', content: '--- END OF EXAMPLES. Now continue the actual conversation below, following the same pattern as the examples above. ---' },
     ...messages.map(msg => ({
       role: msg.role === 'model' ? 'assistant' : 'user',
       content: msg.parts[0].text
@@ -133,7 +146,7 @@ async function callGroqAPI(messages, systemInstruction) {
   }
   
   console.log('🦙 Calling Groq API (primary)...')
-  console.log('   Messages count:', groqMessages.length)
+  console.log('   Messages count:', groqMessages.length, '(including', fewShotExamples.length, 'few-shot examples)')
   console.log('   Conversation exchanges:', Math.floor(messages.length / 2))
   
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
