@@ -112,15 +112,28 @@ function postProcessResponse(text) {
   // Pattern 1: lowercase+uppercase (e.g., "Wajarbanget" → "Wajar banget")
   cleaned = cleaned.replace(/([a-z])([A-Z])/g, '$1 $2')
   
-  // Pattern 2: Known Indonesian compound words that should be split
-  cleaned = cleaned
-    .replace(/([a-z])banget/gi, '$1 banget')
-    .replace(/beban([a-z])/gi, 'beban $1')
-    .replace(/Cari([A-Z])/g, 'Cari $1')
-    .replace(/cari([a-z]{3,})/g, 'cari $1')
-    .replace(/dalam([a-z]{4,})/gi, 'dalam $1')
-    .replace(/perlu([a-z]{2,})/gi, 'perlu $1')
-    .replace(/lagi([a-z]{2,})/gi, 'lagi $1')
+  // Pattern 2: Generic Indonesian word boundaries (COMPREHENSIVE FIX)
+  // Common Indonesian words that should have space before them
+  const indonesianWords = [
+    'banget', 'tidak', 'dengan', 'untuk', 'yang', 'dari', 'oleh', 'pada',
+    'dalam', 'perlu', 'lagi', 'bisa', 'harus', 'akan', 'sudah', 'belum',
+    'sedang', 'dapat', 'sangat', 'juga', 'saja', 'lebih', 'sekali',
+    'beban', 'cari', 'wali', 'cara', 'soal', 'apa', 'siapa', 'mana'
+  ]
+  
+  // Add space before these words if they're stuck to another word
+  indonesianWords.forEach(word => {
+    // Pattern: [letters][word] → [letters] [word]
+    const regex = new RegExp(`([a-z]{2,})(${word})(?![a-z])`, 'gi')
+    cleaned = cleaned.replace(regex, '$1 $2')
+  })
+  
+  // Add space after these words if they're stuck to another word
+  indonesianWords.forEach(word => {
+    // Pattern: [word][letters] → [word] [letters]
+    const regex = new RegExp(`(?<![a-z])(${word})([a-z]{2,})`, 'gi')
+    cleaned = cleaned.replace(regex, '$1 $2')
+  })
   
   // Pattern 3: word+punctuation+word without space (e.g., "ini,tapi" → "ini, tapi")
   cleaned = cleaned.replace(/([a-zA-Z])([,;:])([a-zA-Z])/g, '$1$2 $3')
