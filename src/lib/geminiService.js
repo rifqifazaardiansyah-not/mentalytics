@@ -106,11 +106,9 @@ async function callGroqAPI(messages, systemInstruction) {
   const apiKey = getNextGroqKey()
   
   // Build messages array for Groq (OpenAI format)
-  // Simplify system instruction to avoid token limits
-  const simplifiedSystemInstruction = systemInstruction.substring(0, 1000) + '\n\nBahas sesuai konteks di atas dengan bahasa Indonesia yang ramah.'
-  
+  // Use FULL system instruction for better context understanding
   const groqMessages = [
-    { role: 'system', content: simplifiedSystemInstruction },
+    { role: 'system', content: systemInstruction },
     ...messages.map(msg => ({
       role: msg.role === 'model' ? 'assistant' : 'user',
       content: msg.parts[0].text
