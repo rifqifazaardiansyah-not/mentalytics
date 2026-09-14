@@ -1,6 +1,37 @@
 // Gemini AI Service using Official Google SDK
-// With Groq fallback for high demand scenarios
+// With Hybrid Model Switching (Lite for high-traffic, Flash for complex tasks)
 import { GoogleGenerativeAI } from '@google/generative-ai'
+
+// ============================================================================
+// MODEL CONFIGURATION - Hybrid Model Switching Strategy
+// ============================================================================
+
+/**
+ * Gemini Model Configuration for Hybrid Switching
+ * 
+ * STRATEGY:
+ * - Default: gemini-3.5-flash-lite (fast, high-volume, low-latency)
+ * - Complex: gemini-3.6-flash (reasoning, multimodal, advanced tasks)
+ * 
+ * AUTO-SWITCHING CONDITIONS:
+ * 1. User uploads image/media → Switch to 3.6 Flash
+ * 2. isComplexTask flag set → Switch to 3.6 Flash
+ * 3. Rate limit on 3.6 Flash → Fallback to 3.5 Flash-Lite
+ */
+
+const MODEL_CONFIG = {
+  LITE: 'gemini-3.5-flash-lite',     // High-traffic, simple text conversations
+  FLASH: 'gemini-3.6-flash',         // Complex reasoning, multimodal tasks
+  FALLBACK: 'gemini-2.5-flash'       // Emergency fallback if both fail
+}
+
+// Default model for normal conversations
+let CURRENT_MODEL = MODEL_CONFIG.LITE
+
+console.log('🤖 Gemini Models configured:')
+console.log('   📱 Lite (default):', MODEL_CONFIG.LITE, '- High-traffic, low-latency')
+console.log('   🧠 Flash (complex):', MODEL_CONFIG.FLASH, '- Reasoning, multimodal')
+console.log('   🆘 Fallback:', MODEL_CONFIG.FALLBACK, '- Emergency backup')
 
 // Load Gemini API keys
 const API_KEYS = (() => {
@@ -439,9 +470,64 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+/**
+ * SELECT GEMINI MODEL - Smart router for hybrid model switching
+ * 
+ * @param {Object} options - Request options
+ * @param {boolean} options.hasImage - User uploaded image/media
+ * @param {boolean} options.isComplexTask - Task requires advanced reasoning
+ * @param {string} options.context - Conversation context (guiding_resource, solution, hasil_tes)
+ * @param {boolean} options.forceModel - Force specific model (override auto-selection)
+ * 
+ * @returns {string} Model ID to use
+ */
+function selectGeminiModel(options = {}) {
+  const {
+    hasImage = false,
+    isComplexTask = false,
+    context = 'guiding_resource',
+    forceModel = null
+  } = options
+  
+  // Manual override
+  if (forceModel) {
+    console.log(`🎯 Model forced: ${forceModel}`)
+    return forceModel
+  }
+  
+  // Auto-selection logic
+  const shouldUseFlash = 
+    hasImage ||                              // Multimodal content
+    isComplexTask ||                         // Complex reasoning needed
+    context === 'solution'                   // Solution context needs deeper reasoning
+  
+  const selectedModel = shouldUseFlash ? MODEL_CONFIG.FLASH : MODEL_CONFIG.LITE
+  
+  console.log('🔀 Model selection:')
+  console.log('   hasImage:', hasImage)
+  console.log('   isComplexTask:', isComplexTask)
+  console.log('   context:', context)
+  console.log('   → Selected:', selectedModel, shouldUseFlash ? '(Complex)' : '(Lite)')
+  
+  return selectedModel
+}
+
 // Function untuk chat dengan streaming menggunakan Google SDK
-export async function* streamGeminiResponse(chat, userMessage, context = 'guiding_resource', retryCount = 0) {
+export async function* streamGeminiResponse(
+  chat, 
+  userMessage, 
+  context = 'guiding_resource', 
+  retryCount = 0,
+  options = {} // NEW: Support for hybrid model switching
+) {
   const MAX_GEMINI_RETRIES = 3 // Try 3 times with exponential backoff (2s, 4s, 8s)
+  
+  // Extract options for model selection
+  const {
+    hasImage = false,
+    isComplexTask = false,
+    forceModel = null
+  } = options
   
   // Select system instruction based on context (DECLARE EARLY!)
   const systemInstruction = 
@@ -514,13 +600,24 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     const estimatedTokens = chat.estimateTokens()
     console.log(`📊 Estimated context tokens: ~${estimatedTokens} (history: ${chat.getHistory().length} messages)`)
     
+    // ============================================================================
+    // HYBRID MODEL SELECTION - Smart routing based on task complexity
+    // ============================================================================
+    const selectedModel = selectGeminiModel({
+      hasImage,
+      isComplexTask,
+      context,
+      forceModel
+    })
+    
     console.log('📡 Calling Gemini API with SDK...')
+    console.log('🤖 Model:', selectedModel)
     console.log('📋 Using system instruction for context:', context)
     
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash', // Best price-performance for reasoning tasks
-      systemInstruction: systemInstruction, // Re-enable systemInstruction - it works fine!
+      model: selectedModel, // HYBRID: Lite or Flash based on task
+      systemInstruction: systemInstruction,
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -562,6 +659,23 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     const is503 = error.message?.includes('503') || error.message?.includes('high demand')
     const is429 = error.message?.includes('429') || error.message?.includes('quota')
     
+    // ============================================================================
+    // FALLBACK STRATEGY: If Flash model fails with 429, try Lite model
+    // ============================================================================
+    if (is429 && selectedModel === MODEL_CONFIG.FLASH && retryCount === 0) {
+      console.log('🔄 429 Rate Limit on Flash model - Falling back to Lite model...')
+      
+      // Remove last user message to avoid duplicate
+      chat.history.pop()
+      
+      // Retry with Lite model (force override)
+      yield* streamGeminiResponse(chat, userMessage, context, 0, {
+        ...options,
+        forceModel: MODEL_CONFIG.LITE
+      })
+      return
+    }
+    
     if ((is503 || is429) && retryCount < MAX_GEMINI_RETRIES) {
       // Calculate delay with exponential backoff: 2s, 4s, 8s, 16s...
       const delayMs = Math.pow(2, retryCount + 1) * 1000
@@ -575,8 +689,8 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
       // Remove last user message to avoid duplicate
       chat.history.pop()
       
-      // Retry with next key
-      yield* streamGeminiResponse(chat, userMessage, context, retryCount + 1)
+      // Retry with next key (keep same model)
+      yield* streamGeminiResponse(chat, userMessage, context, retryCount + 1, options)
       return
     }
     
@@ -593,7 +707,12 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
 }
 
 // Function untuk chat tanpa streaming (jika diperlukan)
-export async function sendGeminiMessage(chat, userMessage, context = 'guiding_resource') {
+export async function sendGeminiMessage(
+  chat, 
+  userMessage, 
+  context = 'guiding_resource',
+  options = {} // NEW: Support for hybrid model switching
+) {
   try {
     console.log('📤 Sending message to Gemini (non-streaming):', userMessage)
     console.log('📍 Context:', context)
@@ -601,16 +720,31 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
     // Add user message to history
     chat.addMessage('user', userMessage)
     
+    // Extract options
+    const {
+      hasImage = false,
+      isComplexTask = false,
+      forceModel = null
+    } = options
+    
     // Select system instruction based on context
     const systemInstruction = 
       context === 'solution' ? SOLUTION_CONTEXT :
       context === 'hasil_tes' ? HASIL_TES_CONTEXT :
       GUIDING_RESOURCE_CONTEXT
     
+    // Select model based on task complexity
+    const selectedModel = selectGeminiModel({
+      hasImage,
+      isComplexTask,
+      context,
+      forceModel
+    })
+    
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash', // Best price-performance for reasoning tasks
-      systemInstruction: systemInstruction, // Re-enable systemInstruction - it works fine!
+      model: selectedModel, // HYBRID: Lite or Flash
+      systemInstruction: systemInstruction,
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -650,8 +784,12 @@ export const CONTEXTS = {
   hasil_tes: HASIL_TES_CONTEXT,
 }
 
-// Export utility functions
-export { ChatSession }
+// Export model configuration and utilities
+export { 
+  ChatSession,
+  MODEL_CONFIG,      // Model IDs untuk reference
+  selectGeminiModel  // Manual model selection jika diperlukan
+}
 
 export default {
   createGuidingResourceChat,
@@ -660,4 +798,6 @@ export default {
   streamGeminiResponse,
   sendGeminiMessage,
   CONTEXTS,
+  MODEL_CONFIG,
+  selectGeminiModel,
 }
