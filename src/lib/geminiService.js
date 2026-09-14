@@ -120,7 +120,7 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'llama-3.1-70b-versatile', // Fast & capable model
+      model: 'llama-3.3-70b-versatile', // Updated model (Dec 2024)
       messages: groqMessages,
       temperature: 0.7,
       max_tokens: 2048,
