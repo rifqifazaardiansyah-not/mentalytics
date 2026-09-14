@@ -364,17 +364,32 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
             
             try {
               const parsed = JSON.parse(data)
-              const content = parsed.choices[0]?.delta?.content || ''
+              let content = parsed.choices[0]?.delta?.content || ''
+              
               if (content) {
-                // Filter out <think> tags from Qwen model
-                const cleanContent = content
-                  .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove thinking blocks
-                  .replace(/^\s*<think>.*$/gmi, '') // Remove partial think tags
-                  .replace(/^✅\s*/gm, '') // Remove checkmark artifacts
+                // Aggressively filter Qwen's thinking artifacts
+                content = content
+                  // Remove complete <think>...</think> blocks
+                  .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                  // Remove opening <think> and everything after until newline
+                  .replace(/<think>[^\n]*/gi, '')
+                  // Remove closing </think>
+                  .replace(/<\/think>/gi, '')
+                  // Remove "Here's a thinking process:" and similar
+                  .replace(/Here'?s?\s+a\s+thinking\s+process:?/gi, '')
+                  // Remove numbered thinking steps
+                  .replace(/^\d+\.\s+(Analyze|Check|Formulate|Final|Self-Correction|Output|Done|Proceed).*$/gmi, '')
+                  // Remove checkmarks and "Done" artifacts
+                  .replace(/^✅\s*/gm, '')
+                  .replace(/^\[Done\]\s*/gmi, '')
+                  .replace(/^\[Output.*\]\s*/gmi, '')
+                  // Clean up extra whitespace
+                  .replace(/\n{3,}/g, '\n\n')
+                  .trim()
                 
-                if (cleanContent.trim()) {
-                  fullResponse += cleanContent
-                  yield cleanContent
+                if (content) {
+                  fullResponse += content
+                  yield content
                 }
               }
             } catch (e) {
@@ -490,17 +505,32 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
               
               try {
                 const parsed = JSON.parse(data)
-                const content = parsed.choices[0]?.delta?.content || ''
+                let content = parsed.choices[0]?.delta?.content || ''
+                
                 if (content) {
-                  // Filter out <think> tags from Qwen model
-                  const cleanContent = content
-                    .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove thinking blocks
-                    .replace(/^\s*<think>.*$/gmi, '') // Remove partial think tags
-                    .replace(/^✅\s*/gm, '') // Remove checkmark artifacts
+                  // Aggressively filter Qwen's thinking artifacts
+                  content = content
+                    // Remove complete <think>...</think> blocks
+                    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+                    // Remove opening <think> and everything after until newline
+                    .replace(/<think>[^\n]*/gi, '')
+                    // Remove closing </think>
+                    .replace(/<\/think>/gi, '')
+                    // Remove "Here's a thinking process:" and similar
+                    .replace(/Here'?s?\s+a\s+thinking\s+process:?/gi, '')
+                    // Remove numbered thinking steps
+                    .replace(/^\d+\.\s+(Analyze|Check|Formulate|Final|Self-Correction|Output|Done|Proceed).*$/gmi, '')
+                    // Remove checkmarks and "Done" artifacts
+                    .replace(/^✅\s*/gm, '')
+                    .replace(/^\[Done\]\s*/gmi, '')
+                    .replace(/^\[Output.*\]\s*/gmi, '')
+                    // Clean up extra whitespace
+                    .replace(/\n{3,}/g, '\n\n')
+                    .trim()
                   
-                  if (cleanContent.trim()) {
-                    fullResponse += cleanContent
-                    yield cleanContent
+                  if (content) {
+                    fullResponse += content
+                    yield content
                   }
                 }
               } catch (e) {
