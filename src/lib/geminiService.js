@@ -1,7 +1,8 @@
 // Gemini AI Service using Official Google SDK
+// With Groq fallback for high demand scenarios
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// Auto-detect all available Gemini API keys (supports unlimited keys)
+// Load Gemini API keys
 const API_KEYS = (() => {
   const keys = []
   
@@ -21,39 +22,113 @@ const API_KEYS = (() => {
   return keys
 })()
 
+// Load Groq API keys (fallback)
+const GROQ_API_KEYS = (() => {
+  const keys = []
+  
+  if (import.meta.env.VITE_GROQ_API_KEY) {
+    keys.push(import.meta.env.VITE_GROQ_API_KEY)
+  }
+  
+  for (let i = 2; i <= 10; i++) {
+    const key = import.meta.env[`VITE_GROQ_API_KEY_${i}`]
+    if (key) {
+      keys.push(key)
+    }
+  }
+  
+  return keys
+})()
+
 let currentKeyIndex = 0
+let currentGroqKeyIndex = 0
 
 // Function to get next API key (round-robin rotation)
 function getNextAPIKey() {
   const key = API_KEYS[currentKeyIndex]
   currentKeyIndex = (currentKeyIndex + 1) % API_KEYS.length
-  console.log(`🔄 Using API Key #${currentKeyIndex + 1} of ${API_KEYS.length}`)
+  console.log(`🔄 Using Gemini API Key #${currentKeyIndex + 1} of ${API_KEYS.length}`)
+  return key
+}
+
+// Function to get next Groq API key
+function getNextGroqKey() {
+  const key = GROQ_API_KEYS[currentGroqKeyIndex]
+  currentGroqKeyIndex = (currentGroqKeyIndex + 1) % GROQ_API_KEYS.length
+  console.log(`🔄 Using Groq API Key #${currentGroqKeyIndex + 1} of ${GROQ_API_KEYS.length}`)
   return key
 }
 
 console.log('🔑 Gemini API Keys loaded:', API_KEYS.length, 'keys available')
+console.log('🔑 Groq API Keys loaded:', GROQ_API_KEYS.length, 'keys available (fallback)')
 
-if (API_KEYS.length === 0) {
-  console.error('❌ No VITE_GEMINI_API_KEY found')
-  console.error('💡 Pastikan file .env.local sudah dibuat dan berisi VITE_GEMINI_API_KEY')
-  console.error('💡 Restart dev server setelah mengubah .env file')
+if (API_KEYS.length === 0 && GROQ_API_KEYS.length === 0) {
+  console.error('❌ No AI API keys found!')
+  console.error('💡 Add VITE_GEMINI_API_KEY or VITE_GROQ_API_KEY to .env.local')
 } else {
-  console.log('✅ API Keys available:', API_KEYS.length)
-  API_KEYS.forEach((key, index) => {
-    console.log(`   Key #${index + 1}:`, key ? '✅ Configured' : '❌ Empty')
-  })
+  if (API_KEYS.length > 0) {
+    console.log('✅ Gemini Keys available:', API_KEYS.length)
+    const RPM_PER_KEY = 15
+    const totalRPM = API_KEYS.length * RPM_PER_KEY
+    console.log(`📊 Gemini capacity: ${totalRPM} RPM`)
+  }
   
-  // Calculate total capacity
-  const RPM_PER_KEY = 15
-  const totalRPM = API_KEYS.length * RPM_PER_KEY
-  const estimatedConcurrentUsers = Math.floor(totalRPM / 2) // Assuming 2 req/user/min
-  console.log(`📊 Estimated capacity: ${totalRPM} RPM (${estimatedConcurrentUsers}+ concurrent users)`)
+  if (GROQ_API_KEYS.length > 0) {
+    console.log('✅ Groq Keys available:', GROQ_API_KEYS.length, '(fallback)')
+    const RPM_PER_KEY = 30 // Groq is faster
+    const totalRPM = GROQ_API_KEYS.length * RPM_PER_KEY
+    console.log(`📊 Groq capacity: ${totalRPM} RPM`)
+  }
 }
 
 
 // Initialize Google Generative AI (will be re-created on each request with rotated key)
 function getGenAI() {
+  if (API_KEYS.length === 0) {
+    throw new Error('No Gemini API keys configured')
+  }
   return new GoogleGenerativeAI(getNextAPIKey())
+}
+
+// Function to call Groq API (fallback when Gemini fails)
+async function callGroqAPI(messages, systemInstruction) {
+  if (GROQ_API_KEYS.length === 0) {
+    throw new Error('No Groq API keys configured')
+  }
+  
+  const apiKey = getNextGroqKey()
+  
+  // Build messages array for Groq (OpenAI format)
+  const groqMessages = [
+    { role: 'system', content: systemInstruction },
+    ...messages.map(msg => ({
+      role: msg.role === 'model' ? 'assistant' : 'user',
+      content: msg.parts[0].text
+    }))
+  ]
+  
+  console.log('🦙 Calling Groq API (fallback)...')
+  
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-70b-versatile', // Fast & capable model
+      messages: groqMessages,
+      temperature: 0.7,
+      max_tokens: 2048,
+      stream: true, // Enable streaming
+    })
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Groq API error: ${response.status} ${response.statusText}`)
+  }
+  
+  return response
 }
 
 // System instruction untuk konteks Solution - Idea Sparker (OPTIMIZED)
@@ -311,6 +386,63 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     console.error('Error type:', error.constructor.name)
     console.error('Error message:', error.message)
     
+    // Handle 503 (high demand) - Try Groq fallback
+    if ((error.message?.includes('503') || error.message?.includes('high demand')) && GROQ_API_KEYS.length > 0) {
+      console.log('🔄 Gemini overloaded (503), switching to Groq fallback...')
+      
+      try {
+        // Remove last user message to avoid duplicate
+        chat.history.pop()
+        
+        // Add back user message
+        chat.addMessage('user', userMessage)
+        
+        // Call Groq API
+        const response = await callGroqAPI(chat.getHistory(), systemInstruction)
+        
+        // Parse SSE stream from Groq
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let fullResponse = ''
+        
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n')
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6)
+              if (data === '[DONE]') continue
+              
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices[0]?.delta?.content || ''
+                if (content) {
+                  fullResponse += content
+                  yield content
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+        }
+        
+        // Add assistant response to history
+        chat.addMessage('model', fullResponse)
+        
+        console.log('✅ Groq fallback succeeded!')
+        return
+        
+      } catch (groqError) {
+        console.error('❌ Groq fallback also failed:', groqError)
+        // Continue to error messages below
+      }
+    }
+    
     // Retry with next API key if quota exceeded (429) or rate limit
     if ((error.message?.includes('429') || error.message?.includes('quota')) && retryCount < MAX_RETRIES) {
       console.log(`🔄 Retrying with next API key... (Attempt ${retryCount + 1}/${MAX_RETRIES})`)
@@ -320,11 +452,16 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
       yield* streamGeminiResponse(chat, userMessage, context, retryCount + 1)
     } else if (error.message?.includes('429') || error.message?.includes('quota')) {
       // All keys exhausted, provide helpful error message
-      const fallbackMessage = `Maaf, Milo sedang sibuk membantu banyak teman sekaligus 😅\n\nCoba lagi dalam beberapa menit ya! Atau hubungi guru jika mendesak.\n\n(Rate limit: Terlalu banyak request dalam waktu bersamaan)`
+      const fallbackMessage = `Maaf, Milo sedang sibuk membantu banyak teman sekaligus 😅\n\nCoba lagi dalam beberapa menit ya!\n\n(Rate limit: Terlalu banyak request)`
       yield fallbackMessage
-      // Don't throw, just yield fallback message
+    } else if (error.message?.includes('503') || error.message?.includes('high demand')) {
+      // 503 but no Groq fallback available
+      const fallbackMessage = `Maaf, server AI sedang ramai 😅\n\nCoba lagi dalam 1-2 menit ya!\n\n(503: Server experiencing high demand)\n\n💡 Tip: Tambahkan VITE_GROQ_API_KEY di .env untuk auto fallback`
+      yield fallbackMessage
     } else {
-      throw error
+      // Generic error
+      const fallbackMessage = `Maaf, ada masalah saat menghubungi AI. Coba lagi ya! 😅\n\n(Error: ${error.message?.substring(0, 100) || 'Unknown error'})`
+      yield fallbackMessage
     }
   }
 }
