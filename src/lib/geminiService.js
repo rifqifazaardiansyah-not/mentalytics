@@ -125,10 +125,10 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'openai/gpt-oss-20b', // FREE production model - fast & clean
+      model: 'openai/gpt-oss-120b', // FREE production model - BEST quality, 120B parameters
       messages: groqMessages,
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: 2048, // Increased for better responses
       stream: true,
     })
   })
