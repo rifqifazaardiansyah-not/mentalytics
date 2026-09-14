@@ -366,8 +366,16 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
               const parsed = JSON.parse(data)
               const content = parsed.choices[0]?.delta?.content || ''
               if (content) {
-                fullResponse += content
-                yield content
+                // Filter out <think> tags from Qwen model
+                const cleanContent = content
+                  .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove thinking blocks
+                  .replace(/^\s*<think>.*$/gmi, '') // Remove partial think tags
+                  .replace(/^✅\s*/gm, '') // Remove checkmark artifacts
+                
+                if (cleanContent.trim()) {
+                  fullResponse += cleanContent
+                  yield cleanContent
+                }
               }
             } catch (e) {
               // Skip invalid JSON
@@ -484,8 +492,16 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
                 const parsed = JSON.parse(data)
                 const content = parsed.choices[0]?.delta?.content || ''
                 if (content) {
-                  fullResponse += content
-                  yield content
+                  // Filter out <think> tags from Qwen model
+                  const cleanContent = content
+                    .replace(/<think>[\s\S]*?<\/think>/gi, '') // Remove thinking blocks
+                    .replace(/^\s*<think>.*$/gmi, '') // Remove partial think tags
+                    .replace(/^✅\s*/gm, '') // Remove checkmark artifacts
+                  
+                  if (cleanContent.trim()) {
+                    fullResponse += cleanContent
+                    yield cleanContent
+                  }
                 }
               } catch (e) {
                 // Skip invalid JSON
