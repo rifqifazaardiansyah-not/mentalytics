@@ -441,7 +441,7 @@ function sleep(ms) {
 
 // Function untuk chat dengan streaming menggunakan Google SDK
 export async function* streamGeminiResponse(chat, userMessage, context = 'guiding_resource', retryCount = 0) {
-  const MAX_GEMINI_RETRIES = 2 // Only try Gemini twice before giving up
+  const MAX_GEMINI_RETRIES = 3 // Try 3 times with exponential backoff (2s, 4s, 8s)
   
   // Select system instruction based on context (DECLARE EARLY!)
   const systemInstruction = 
@@ -519,8 +519,8 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-      // Removed systemInstruction parameter - causes 503 errors
+      model: 'gemini-2.5-flash', // Best price-performance for reasoning tasks
+      systemInstruction: systemInstruction, // Re-enable systemInstruction - it works fine!
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
@@ -531,18 +531,10 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     
     console.log('✅ Preparing content for streaming')
     
-    // Build contents array with system instruction prepended as conversation
-    const contents = []
-    
-    // Always include system instruction at start
-    contents.push({ role: 'user', parts: [{ text: systemInstruction }] })
-    contents.push({ role: 'model', parts: [{ text: 'Mengerti, saya akan mengikuti instruksi tersebut.' }] })
-    
-    // Add all chat history
-    contents.push(...chat.getHistory())
-    
-    // Use generateContentStream for faster streaming
-    const result = await model.generateContentStream({ contents })
+    // Use generateContentStream directly - systemInstruction already in model config
+    const result = await model.generateContentStream({ 
+      contents: chat.getHistory()
+    })
     
     let fullResponse = ''
     
@@ -571,8 +563,8 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     const is429 = error.message?.includes('429') || error.message?.includes('quota')
     
     if ((is503 || is429) && retryCount < MAX_GEMINI_RETRIES) {
-      // Calculate delay: 1s, 2s, 3s, 4s... (linear backoff)
-      const delayMs = (retryCount + 1) * 1000
+      // Calculate delay with exponential backoff: 2s, 4s, 8s, 16s...
+      const delayMs = Math.pow(2, retryCount + 1) * 1000
       
       console.log(`🔄 ${is503 ? '503 High Demand' : '429 Rate Limit'} - Retrying in ${delayMs}ms...`)
       console.log(`   Attempt ${retryCount + 1}/${MAX_GEMINI_RETRIES}`)
@@ -588,12 +580,9 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
       return
     }
     
-    // All retries exhausted
-    if (is503) {
-      const fallbackMessage = `Maaf, server Gemini sedang sangat ramai 😅\n\nSudah coba ${retryCount + 1} kali dengan ${API_KEYS.length} API key berbeda.\n\nCoba lagi dalam 2-3 menit ya! 🙏`
-      yield fallbackMessage
-    } else if (is429) {
-      const fallbackMessage = `Maaf, Milo sedang sibuk membantu banyak teman sekaligus 😅\n\nSemua ${API_KEYS.length} API key sudah mencapai limit.\n\nCoba lagi dalam 1 menit ya! 🙏`
+    // All retries exhausted or non-retryable error
+    if (is503 || is429) {
+      const fallbackMessage = `Maaf, Milo sedang sangat sibuk sekarang 😅\n\nSudah coba ${retryCount + 1}x dengan ${API_KEYS.length} API key berbeda, tapi server Google masih penuh.\n\nCoba lagi dalam 2-3 menit ya! 🙏`
       yield fallbackMessage
     } else {
       // Generic error
@@ -620,8 +609,8 @@ export async function sendGeminiMessage(chat, userMessage, context = 'guiding_re
     
     const genAI = getGenAI() // Get new instance with rotated API key
     const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-      // Removed systemInstruction parameter - causes 503 errors
+      model: 'gemini-2.5-flash', // Best price-performance for reasoning tasks
+      systemInstruction: systemInstruction, // Re-enable systemInstruction - it works fine!
       generationConfig: {
         temperature: 0.7,
         topP: 0.95,
