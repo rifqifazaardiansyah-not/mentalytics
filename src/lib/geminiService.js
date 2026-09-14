@@ -118,7 +118,7 @@ async function callGroqAPI(messages, systemInstruction) {
   const apiKey = getNextGroqKey()
   
   // Build messages array for Groq (OpenAI format)
-  // Use FULL system instruction for better context understanding
+  // IMPORTANT: Put system instruction ONCE at the beginning, then all conversation history
   const groqMessages = [
     { role: 'system', content: systemInstruction },
     ...messages.map(msg => ({
@@ -127,8 +127,14 @@ async function callGroqAPI(messages, systemInstruction) {
     }))
   ]
   
-  console.log('🦙 Calling Groq API (fallback)...')
+  // Add explicit context reminder if there's conversation history
+  if (messages.length > 1) {
+    groqMessages[0].content += `\n\n⚠️ CRITICAL: This is an ONGOING conversation with ${Math.floor(messages.length / 2)} exchanges. DO NOT greet again ("Hai! 👋"). Continue the conversation naturally based on chat history above.`
+  }
+  
+  console.log('🦙 Calling Groq API (primary)...')
   console.log('   Messages count:', groqMessages.length)
+  console.log('   Conversation exchanges:', Math.floor(messages.length / 2))
   
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
