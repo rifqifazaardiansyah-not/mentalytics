@@ -381,8 +381,13 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
         }
       }
       
+      // Debug: Log raw response before filtering
+      console.log('🔍 Raw response length:', fullResponse.length)
+      console.log('🔍 Raw response preview:', fullResponse.substring(0, 200))
+      
       // Filter thinking artifacts from final response
       // Only remove thinking patterns, keep the actual answer
+      const originalResponse = fullResponse
       fullResponse = fullResponse
         // Remove complete <think>...</think> blocks including content
         .replace(/<think>[\s\S]*?<\/think>/gi, '')
@@ -397,6 +402,14 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
         // Remove extra whitespace but keep structure
         .replace(/\n{3,}/g, '\n\n')
         .trim()
+      
+      console.log('✅ Filtered response length:', fullResponse.length)
+      console.log('✅ Filtered response preview:', fullResponse.substring(0, 200))
+      
+      if (!fullResponse && originalResponse) {
+        console.warn('⚠️  All content was filtered! Using original response.')
+        fullResponse = originalResponse
+      }
       
       chat.addMessage('model', fullResponse)
       console.log('✅ Groq response completed (primary)')
@@ -539,7 +552,12 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
           }
         }
         
+        // Debug: Log raw response before filtering
+        console.log('🔍 Raw response length:', fullResponse.length)
+        console.log('🔍 Raw response preview:', fullResponse.substring(0, 200))
+        
         // Filter thinking artifacts from final response
+        const originalResponse = fullResponse
         fullResponse = fullResponse
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
           .replace(/<\/?think>/gi, '')
@@ -548,6 +566,14 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
           .replace(/^✅\s*/gm, '')
           .replace(/\n{3,}/g, '\n\n')
           .trim()
+        
+        console.log('✅ Filtered response length:', fullResponse.length)
+        console.log('✅ Filtered response preview:', fullResponse.substring(0, 200))
+        
+        if (!fullResponse && originalResponse) {
+          console.warn('⚠️  All content was filtered! Using original response.')
+          fullResponse = originalResponse
+        }
         
         // Add assistant response to history
         chat.addMessage('model', fullResponse)
