@@ -30,8 +30,20 @@ const GROQ_API_KEYS = (() => {
     keys.push(import.meta.env.VITE_GROQ_API_KEY)
   }
   
-  for (let i = 2; i <= 10; i++) {
+  // Support both numeric suffix (local) and word suffix (Vercel-friendly)
+  const suffixes = ['TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN']
+  
+  // Check numeric suffixes first (_2, _3, etc.) for local development
+  for (let i = 2; i <= 20; i++) {
     const key = import.meta.env[`VITE_GROQ_API_KEY_${i}`]
+    if (key) {
+      keys.push(key)
+    }
+  }
+  
+  // Check word suffixes (_TWO, _THREE, etc.) for Vercel
+  for (const suffix of suffixes) {
+    const key = import.meta.env[`VITE_GROQ_API_KEY_${suffix}`]
     if (key) {
       keys.push(key)
     }
