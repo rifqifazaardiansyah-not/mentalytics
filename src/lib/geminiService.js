@@ -156,7 +156,7 @@ async function callGroqAPI(messages, systemInstruction) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'openai/gpt-oss-120b', // FREE production model - BEST quality, 120B parameters
+      model: 'groq/compound', // Groq's own system model with reasoning & tools
       messages: groqMessages,
       temperature: 0.7, // Balanced creativity & consistency
       top_p: 0.9, // Nucleus sampling for quality
