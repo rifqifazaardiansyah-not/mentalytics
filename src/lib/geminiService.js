@@ -317,6 +317,12 @@ export function createHasilTesChat() {
 export async function* streamGeminiResponse(chat, userMessage, context = 'guiding_resource', retryCount = 0) {
   const MAX_RETRIES = API_KEYS.length // Try all available keys
   
+  // Select system instruction based on context (DECLARE EARLY!)
+  const systemInstruction = 
+    context === 'solution' ? SOLUTION_CONTEXT :
+    context === 'hasil_tes' ? HASIL_TES_CONTEXT :
+    GUIDING_RESOURCE_CONTEXT
+  
   try {
     console.log('📤 Sending message to Gemini:', userMessage)
     console.log('📍 Context:', context)
@@ -327,12 +333,6 @@ export async function* streamGeminiResponse(chat, userMessage, context = 'guidin
     // Log token usage
     const estimatedTokens = chat.estimateTokens()
     console.log(`📊 Estimated context tokens: ~${estimatedTokens} (history: ${chat.getHistory().length} messages)`)
-    
-    // Select system instruction based on context
-    const systemInstruction = 
-      context === 'solution' ? SOLUTION_CONTEXT :
-      context === 'hasil_tes' ? HASIL_TES_CONTEXT :
-      GUIDING_RESOURCE_CONTEXT
     
     console.log('📡 Calling Gemini API with SDK...')
     console.log('📋 Using system instruction for context:', context)
