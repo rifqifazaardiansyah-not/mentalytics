@@ -114,16 +114,23 @@ function postProcessResponse(text) {
   
   // Pattern 2: Known Indonesian compound words that should be split
   cleaned = cleaned
-    .replace(/([a-z])banget/gi, '$1 banget')        // Wajarbanget → Wajar banget
-    .replace(/beban([a-z])/gi, 'beban $1')          // bebanemosional → beban emosional  
-    .replace(/Cari([A-Z])/g, 'Cari $1')             // CariSatu → Cari Satu
-    .replace(/cari([a-z]{3,})/g, 'cari $1')         // carisatu → cari satu
+    .replace(/([a-z])banget/gi, '$1 banget')
+    .replace(/beban([a-z])/gi, 'beban $1')
+    .replace(/Cari([A-Z])/g, 'Cari $1')
+    .replace(/cari([a-z]{3,})/g, 'cari $1')
+    .replace(/dalam([a-z]{4,})/gi, 'dalam $1')
+    .replace(/perlu([a-z]{2,})/gi, 'perlu $1')
+    .replace(/lagi([a-z]{2,})/gi, 'lagi $1')
   
   // Pattern 3: word+punctuation+word without space (e.g., "ini,tapi" → "ini, tapi")
   cleaned = cleaned.replace(/([a-zA-Z])([,;:])([a-zA-Z])/g, '$1$2 $3')
   
   // Pattern 4: punctuation+word without space (e.g., ",tapi" → ", tapi")
   cleaned = cleaned.replace(/([,;:.!?])([a-zA-Z])/g, '$1 $2')
+  
+  // Pattern 5: Fix quotes without spaces
+  cleaned = cleaned.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1 "$2')
+  cleaned = cleaned.replace(/"([a-zA-Z])/g, '"$1')
   
   // Clean up excessive spaces from above replacements
   cleaned = cleaned.replace(/\s{2,}/g, ' ')
