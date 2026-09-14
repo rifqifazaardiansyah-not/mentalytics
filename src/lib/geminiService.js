@@ -130,7 +130,7 @@ async function callGroqAPI(messages, systemInstruction) {
       model: 'qwen/qwen3.6-27b', // Fast, free preview model (500 T/sec)
       messages: groqMessages,
       temperature: 0.7,
-      max_tokens: 2048,
+      max_tokens: 1000, // Reduced from 2048 to fit free tier limit
       stream: true, // Enable streaming
     })
   })
