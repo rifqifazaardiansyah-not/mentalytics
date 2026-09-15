@@ -85,19 +85,25 @@ export default function AnxietyCategoryCard({ category, checkedSymptoms, emotico
             <span className="text-xs text-red-600 font-medium">⚠️ Pilih emotikon</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-3">
+        {/* 
+          RESPONSIVE LAYOUT:
+          - Desktop/Tablet: 5 columns horizontal (all in one row)
+          - Mobile: 1 column vertical (stacked, maintains order top to bottom)
+          - Mobile boxes are smaller to save space
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3">
           {anxietyEmoticons.map((option) => (
             <button
               key={option.value}
               type="button"
               onClick={() => onEmoticonChange(category.no, option.value)}
-              className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+              className={`flex flex-col md:flex-col items-center gap-1.5 md:gap-2 p-2 md:p-3 rounded-lg md:rounded-xl border-2 transition-all ${
                 emoticonScore === option.value
                   ? 'bg-primary-500 border-primary-600 shadow-md scale-105'
                   : 'bg-white border-gray-200 hover:border-primary-300 hover:bg-primary-50'
               }`}
             >
-              <span className="text-3xl">{option.emoji}</span>
+              <span className="text-2xl md:text-3xl">{option.emoji}</span>
               <span className={`text-xs font-medium text-center leading-tight ${
                 emoticonScore === option.value ? 'text-ink-900' : 'text-ink-600'
               }`}>
