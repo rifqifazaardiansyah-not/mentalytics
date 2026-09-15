@@ -728,7 +728,11 @@ INSTRUKSI:
     },
     {
       key: 'lemah',
-      text: 'Jika titik-titik masih memperlihatkan arah tertentu tetapi tersebar cukup jauh dari garis kecenderungannya, korelasinya disebut lemah. Hubungannya masih ada, tetapi tidak terlalu kuat. | Nilai korelasi: mendekati 0 (misalnya 0.3)'
+      text: 'Jika titik-titik masih memperlihatkan arah tertentu tetapi tersebar cukup jauh dari garis kecenderungannya, korelasinya disebut lemah. Hubungannya masih ada, tetapi tidak terlalu kuat. | Nilai korelasi: mendekati 0.3-0.5 (misalnya 0.4)'
+    },
+    {
+      key: 'tidakAda',
+      text: 'Jika titik-titik tersebar acak tanpa pola yang jelas, artinya tidak ada korelasi. Kedua variabel tidak memiliki hubungan yang konsisten. | Nilai korelasi: mendekati 0 (misalnya 0.1 atau -0.1)'
     }
   ]
 
@@ -2379,7 +2383,7 @@ INSTRUKSI:
                 </h4>
 
                 {/* Drop zones for Kekuatan */}
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                <div className="grid md:grid-cols-3 gap-4 mb-6">
                   {/* Korelasi Kuat */}
                   <div 
                     className={`bg-green-50 rounded-xl p-6 border-2 transition-all ${
@@ -2466,6 +2470,52 @@ INSTRUKSI:
                     ) : (
                       <div className="bg-white bg-opacity-50 rounded-lg p-4 border-2 border-dashed border-orange-300 min-h-[100px] flex items-center justify-center">
                         <p className="text-sm text-orange-700 text-center">
+                          {isMobile ? 'Ketuk untuk menempatkan' : 'Tarik penjelasan ke sini'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Tidak Ada Korelasi / Netral */}
+                  <div 
+                    className={`bg-gray-50 rounded-xl p-6 border-2 transition-all ${
+                      sectionDProgress.tidakAdaComplete ? 'border-gray-500 bg-gray-100' : 'border-gray-300 border-dashed'
+                    } ${isMobile && selectedDescription && !sectionDAnswers.tidakAda ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => handleSectionDDrop(e, 'tidakAda')}
+                    onClick={() => isMobile && handleSectionDTargetClick('tidakAda')}
+                  >
+                    <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                      <div className="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white text-sm">
+                        •••
+                      </div>
+                      Tidak Ada Korelasi
+                    </h5>
+                    
+                    {sectionDAnswers.tidakAda ? (
+                      <div className={`bg-white rounded-lg p-4 text-sm ${sectionDProgress.tidakAdaComplete ? '' : 'animate-shake'}`}>
+                        <div className="flex justify-between items-start gap-2 mb-2">
+                          <p className="text-ink-700">
+                            {sectionDAnswers.tidakAda.split(' | ')[0]}
+                          </p>
+                          {!sectionDProgress.tidakAdaComplete && (
+                            <button
+                              onClick={() => removeSectionDAnswer('tidakAda')}
+                              className="text-red-500 hover:text-red-700 flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                        <div className="bg-gray-50 rounded p-2 text-xs mt-2">
+                          <span className="font-semibold">
+                            {sectionDAnswers.tidakAda.split(' | ')[1]}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white bg-opacity-50 rounded-lg p-4 border-2 border-dashed border-gray-300 min-h-[100px] flex items-center justify-center">
+                        <p className="text-sm text-gray-700 text-center">
                           {isMobile ? 'Ketuk untuk menempatkan' : 'Tarik penjelasan ke sini'}
                         </p>
                       </div>

@@ -508,7 +508,7 @@ export default function EksplorasiDiagramPencar() {
           <h1 className="text-2xl md:text-3xl font-poppins font-semibold text-ink-900 mb-2">
             Eksplorasi Diagram Pencar
           </h1>
-          <div className="flex items-center justify-center gap-2 text-sm text-ink-600 flex-wrap">
+          <div className="flex items-center justify-center gap-2 text-sm text-ink-600 flex-wrap mb-4">
             <span className={`px-3 py-1 rounded-full ${currentStep >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-200'}`}>
               1. Pilih Variabel
             </span>
@@ -525,6 +525,42 @@ export default function EksplorasiDiagramPencar() {
               4. Hasil
             </span>
           </div>
+
+          {/* Skip Button - Only show if not completed */}
+          {currentStep < 4 && (
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 max-w-2xl mx-auto">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-start gap-3 text-left">
+                  <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-blue-900 mb-1">
+                      ⚡ Ingin Langsung ke Analisis?
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Jika sudah paham cara membuat diagram pencar, kamu bisa langsung ke Guiding Question
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (window.confirm('Yakin ingin skip eksplorasi diagram? Progress tidak akan disimpan.')) {
+                      navigate('/kegiatan-belajar/the-challenge/guiding-question')
+                    }
+                  }}
+                  className="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-md"
+                >
+                  <span>Skip ke Guiding Question</span>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Main Content - akan saya lanjutkan di bagian berikutnya karena sangat panjang */}
