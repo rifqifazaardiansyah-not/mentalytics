@@ -424,6 +424,10 @@ export default function EksplorasiDiagramPencar() {
 
   // Reset function
   const handleReset = async () => {
+    // Clear DB first
+    await clearProgressFromDB()
+    
+    // Then reset all states (this ensures UI re-renders after DB is cleared)
     setCurrentStep(1)
     setXAxisVar(null)
     setYAxisVar(null)
@@ -437,7 +441,6 @@ export default function EksplorasiDiagramPencar() {
     setCorrelationScore(null)
     setSelectedPoint(null)
     setCheckedRows({})
-    await clearProgressFromDB()
   }
 
   const getStepMessage = () => {
