@@ -404,7 +404,7 @@ export default function PresentationView() {
               <p>Belum ada rekomendasi yang ditulis.</p>
               <button
                 onClick={() => navigate('/kegiatan-belajar/the-challenge/solution')}
-                className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 Tulis Rekomendasi
               </button>

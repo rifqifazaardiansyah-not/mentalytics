@@ -531,16 +531,16 @@ export default function EksplorasiDiagramPencar() {
 
           {/* Skip Button - Only show if not completed */}
           {currentStep < 4 && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 max-w-2xl mx-auto">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="flex items-start gap-3 text-left">
-                  <div className="flex-shrink-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 md:p-4 w-full md:max-w-2xl mx-auto">
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-start gap-2 md:gap-3 text-left w-full">
+                  <div className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 md:w-5 md:h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-blue-900 mb-1">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs md:text-sm font-semibold text-blue-900 mb-1">
                       ⚡ Ingin Langsung ke Analisis?
                     </p>
                     <p className="text-xs text-blue-700">
@@ -554,9 +554,10 @@ export default function EksplorasiDiagramPencar() {
                       navigate('/kegiatan-belajar/the-challenge/guiding-question')
                     }
                   }}
-                  className="flex-shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 shadow-md"
+                  className="w-full md:w-auto px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md"
                 >
-                  <span>Skip ke Guiding Question</span>
+                  <span className="hidden md:inline">Skip ke Guiding Question</span>
+                  <span className="md:hidden">Skip Eksplorasi</span>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
