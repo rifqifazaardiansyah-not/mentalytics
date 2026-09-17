@@ -424,8 +424,7 @@ export default function GuidingQuestion() {
                       </p>
                       <p className="text-xs text-orange-800 mb-3">
                         Diagram kamu memiliki {inputtedPointsCount} titik, 
-                        sedangkan sekarang ada {currentRespondentCount} responden survey. 
-                        Diagram ini masih pakai data lama.
+                        sedangkan sekarang ada {currentRespondentCount} responden survey.
                       </p>
                       <p className="text-xs text-red-600 mb-3">
                         Segera update diagram kamu!
