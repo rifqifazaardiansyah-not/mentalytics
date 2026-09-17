@@ -144,7 +144,7 @@ export default function Panduan() {
     },
     {
       icon: Lightbulb,
-      title: 'AI Assistant (Claude)',
+      title: 'AI Assistant (Gemini)',
       description: 'AI hadir di 3 titik pembelajaran: memahami konsep, feedback rekomendasi, dan review akhir. Semuanya dengan konteks yang disesuaikan dengan posisimu di pembelajaran.',
       color: 'from-primary-500 to-primary-600',
     },
