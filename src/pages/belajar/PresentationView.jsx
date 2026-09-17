@@ -385,7 +385,7 @@ export default function PresentationView() {
           className="bg-white rounded-2xl p-8 shadow-xl mb-8"
         >
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center">
               <Lightbulb className="w-6 h-6 text-white" />
             </div>
             <h2 className="text-2xl font-poppins font-semibold text-ink-900">
