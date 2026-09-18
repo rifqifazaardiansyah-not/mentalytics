@@ -317,7 +317,7 @@ export default function PresentationView() {
                     <text
                       key={`y-${val}`}
                       x={padding - 20}
-                      y={scaleYFunc(data.scaleY.max - val) + 4}
+                      y={scaleYFunc(val) + 4}
                       textAnchor="middle"
                       fontSize="11"
                       fill="#374151"
