@@ -112,6 +112,12 @@ export default function PresentationView() {
           checklist: solutionData?.checklist ? JSON.parse(solutionData.checklist) : {}
         })
 
+        console.log('✅ Presentation data loaded:', {
+          correlationScore: parsedDiagram.correlationScore,
+          hasRegressionLine: !!convertedRegressionLine.point1,
+          pointsCount: parsedDiagram.inputtedPoints?.length || 0
+        })
+
       } catch (err) {
         console.error('Error loading presentation data:', err)
       } finally {
@@ -136,22 +142,21 @@ export default function PresentationView() {
     return height - padding - (value / data.scaleY.max) * (height - 2 * padding)
   }
 
-  // Determine correlation direction
+  // Determine correlation direction (correct threshold: |r| <= 0.19 for no correlation)
   const getCorrelationLabel = () => {
-    if (!data.correlationScore) return 'Belum dianalisis'
+    if (data.correlationScore === null || data.correlationScore === undefined) return 'Belum dianalisis'
     const r = data.correlationScore
-    if (Math.abs(r) <= 0.3) return 'Tidak Berkorelasi'
+    if (Math.abs(r) <= 0.19) return 'Tidak Berkorelasi'
     return r > 0 ? 'Korelasi Positif' : 'Korelasi Negatif'
   }
 
   const getCorrelationStrength = () => {
-    if (!data.correlationScore) return ''
+    if (data.correlationScore === null || data.correlationScore === undefined) return ''
     const absR = Math.abs(data.correlationScore)
-    if (absR <= 0.3) return ''
-    if (absR <= 0.5) return 'Lemah'
-    if (absR <= 0.7) return 'Sedang'
-    if (absR <= 0.9) return 'Kuat'
-    return 'Sangat Kuat'
+    if (absR <= 0.19) return 'Sangat Lemah'
+    if (absR > 0.7) return 'Kuat'
+    if (absR > 0.4) return 'Sedang'
+    return 'Lemah'
   }
 
   if (loading) {
@@ -357,7 +362,7 @@ export default function PresentationView() {
           </div>
 
           {/* Correlation Info */}
-          {data.correlationScore !== null && (
+          {data.correlationScore !== null && data.correlationScore !== undefined && !isNaN(data.correlationScore) && (
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-300">
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="text-center">

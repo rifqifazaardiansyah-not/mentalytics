@@ -913,14 +913,14 @@ export default function EksplorasiDiagramPencar() {
                     {correlationScore.toFixed(3)}
                   </p>
                   <p className="text-base text-ink-600 mb-1 font-medium">
-                    {Math.abs(correlationScore) <= 0.3 
+                    {Math.abs(correlationScore) <= 0.19 
                       ? 'Tidak Berkorelasi' 
                       : correlationScore > 0 
                         ? 'Korelasi Positif' 
                         : 'Korelasi Negatif'}
                   </p>
                   <p className="text-sm text-ink-500">
-                    Kekuatan: {Math.abs(correlationScore) <= 0.3 
+                    Kekuatan: {Math.abs(correlationScore) <= 0.19 
                       ? 'Sangat Lemah'
                       : Math.abs(correlationScore) > 0.7 
                         ? 'Kuat' 
