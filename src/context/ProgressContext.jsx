@@ -10,7 +10,7 @@ const LEARNING_STEPS = [
   { id: 'big-idea', name: 'Big Idea & EQ', path: '/kegiatan-belajar/big-idea' },
   { id: 'forum-diskusi', name: 'Forum Diskusi', path: '/kegiatan-belajar/big-idea/forum-diskusi' },
   { id: 'the-challenge', name: 'The Challenge', path: '/kegiatan-belajar/the-challenge' },
-  { id: 'guiding-resource', name: 'Guiding Resource', path: '/kegiatan-belajar/the-challenge/guiding-resource' },
+  { id: 'guiding-resource', name: 'Guiding Resource', path: '/kegiatan-belajar/the-challenge/guiding-resource-level-1' },
   { id: 'transisi', name: 'Transisi', path: '/kegiatan-belajar/the-challenge/transisi-aktivitas' },
   { id: 'survey', name: 'Survey', path: '/kegiatan-belajar/the-challenge/guiding-activities' },
   { id: 'hasil-survey', name: 'Hasil Survey', path: '/kegiatan-belajar/the-challenge/hasil-guiding-activities' },

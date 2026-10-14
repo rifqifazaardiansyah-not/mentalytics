@@ -441,13 +441,13 @@ export default function GuidingQuestion() {
                 </motion.div>
               )}
               
-              {/* Simple correlation info card */}
+              {/* Simple correlation info card
               <div className="bg-primary-50 rounded-lg p-4 mb-4">
                 <p className="text-xs text-ink-600 mb-1">Nilai Korelasi (r):</p>
                 <p className="text-3xl font-bold text-primary-700">
                   {correlationScore !== null ? correlationScore.toFixed(3) : '—'}
                 </p>
-              </div>
+              </div> */}
 
               {/* Scatter plot - from student's eksplorasi */}
               <svg
@@ -699,9 +699,16 @@ export default function GuidingQuestion() {
                     Esai Singkat
                   </h3>
                   <p className="text-ink-700 mb-4">
-                    Seberapa kuat pola tersebut, dan apakah ada titik yang menyimpang jauh dari pola umum (outlier)? 
-                    Jelaskan alasannya berdasarkan tampilan diagram kelompokmu.
+                    Seberapa kuat korelasi tersebut, Hitung berdasarkan informasi yang diberikan! Dan apakah ada outlier?
                   </p>
+                    <ol className="text-ink-700 mb-4 list-decimal pl-6">
+                      <li>n = banyak pasangan data</li>
+                      <li>x = variabel independen</li>
+                      <li>y = variabel dependen</li>
+                      <li>Σxy = jumlah hasil kali tiap pasangan (x × y)</li>
+                      <li>Σx² = jumlah kuadrat semua</li> 
+                      <li>(Σx)² = kuadrat dari jumlah semua x</li> 
+                    </ol>
                   
                   <textarea
                     value={answers.q3}
@@ -734,9 +741,7 @@ export default function GuidingQuestion() {
                     Esai Singkat
                   </h3>
                   <p className="text-ink-700 mb-4">
-                    Lihat nilai r pada kartu ringkasan. Apakah nilainya mendekati 0, atau mendekati 1 atau -1? 
-                    Apa artinya angka itu bagi hubungan antara bullying dan kecemasan di kelompokmu? 
-                    Menurut kalian, kenapa bullying bisa berkaitan dengan tingkat kecemasan murid?
+                    Berdasarkan perhitungan korelasi pada nomor 3, apa arti angka tersebut bagi hubungan antara bullying dan kecemasan di kelompokmu? Menurut kalian, kenapa bullying bisa berkaitan dengan tingkat kecemasan murid?
                   </p>
                   
                   <textarea

@@ -1,12 +1,52 @@
-import { useState, useEffect, useContext } from 'react'
+﻿import { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, RotateCcw, CheckCircle2, AlertCircle, Table, PenTool, TrendingUp } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { ArrowRight, RotateCcw, CheckCircle2, AlertCircle, Table, PenTool, TrendingUp, Maximize2, X, Info, AlertTriangle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import LearningLayout from '../../components/layout/LearningLayout'
 import MiloCharacter from '../../components/milo/MiloCharacter'
 import MiloDialogBubble from '../../components/milo/MiloDialogBubble'
 import { StudentContext } from '../../context/StudentContext'
 import { supabase } from '../../lib/supabaseClient'
+
+// Data untuk Interactive Scatter Plot Explorer (Step 5)
+const scatterPlotData = {
+  positif: [
+    { id: 1, label: 'Remaja A', screentime: 0.5, anxiety: 23, x: 7, y: 23 },
+    { id: 2, label: 'Remaja B', screentime: 1, anxiety: 28, x: 14, y: 36 },
+    { id: 3, label: 'Remaja C', screentime: 1.5, anxiety: 31, x: 21, y: 46 },
+    { id: 4, label: 'Remaja D', screentime: 2, anxiety: 35, x: 28, y: 54 },
+    { id: 5, label: 'Remaja E', screentime: 2.5, anxiety: 39, x: 35, y: 62 },
+    { id: 6, label: 'Remaja F', screentime: 3, anxiety: 44, x: 42, y: 72 },
+    { id: 7, label: 'Remaja G', screentime: 3.5, anxiety: 48, x: 50, y: 80 },
+    { id: 8, label: 'Remaja H', screentime: 4, anxiety: 52, x: 57, y: 88 },
+    { id: 9, label: 'Remaja I', screentime: 5, anxiety: 58, x: 71, y: 98 },
+    { id: 10, label: 'Remaja J', screentime: 6, anxiety: 64, x: 85, y: 106 }
+  ],
+  tidakAda: [
+    { id: 1, label: 'Remaja A', screentime: 0.5, anxiety: 45, x: 7, y: 50 },
+    { id: 2, label: 'Remaja B', screentime: 1, anxiety: 32, x: 14, y: 24 },
+    { id: 3, label: 'Remaja C', screentime: 1.5, anxiety: 51, x: 21, y: 62 },
+    { id: 4, label: 'Remaja D', screentime: 2, anxiety: 28, x: 28, y: 16 },
+    { id: 5, label: 'Remaja E', screentime: 2.5, anxiety: 48, x: 35, y: 56 },
+    { id: 6, label: 'Remaja F', screentime: 3, anxiety: 35, x: 42, y: 30 },
+    { id: 7, label: 'Remaja G', screentime: 3.5, anxiety: 42, x: 50, y: 44 },
+    { id: 8, label: 'Remaja H', screentime: 4, anxiety: 39, x: 57, y: 38 },
+    { id: 9, label: 'Remaja I', screentime: 5, anxiety: 46, x: 71, y: 52 },
+    { id: 10, label: 'Remaja J', screentime: 6, anxiety: 31, x: 85, y: 22 }
+  ],
+  negatif: [
+    { id: 1, label: 'Remaja A', screentime: 0.5, anxiety: 62, x: 7, y: 92 },
+    { id: 2, label: 'Remaja B', screentime: 1, anxiety: 58, x: 14, y: 84 },
+    { id: 3, label: 'Remaja C', screentime: 1.5, anxiety: 54, x: 21, y: 76 },
+    { id: 4, label: 'Remaja D', screentime: 2, anxiety: 49, x: 28, y: 66 },
+    { id: 5, label: 'Remaja E', screentime: 2.5, anxiety: 45, x: 35, y: 58 },
+    { id: 6, label: 'Remaja F', screentime: 3, anxiety: 40, x: 42, y: 48 },
+    { id: 7, label: 'Remaja G', screentime: 3.5, anxiety: 36, x: 50, y: 40 },
+    { id: 8, label: 'Remaja H', screentime: 4, anxiety: 32, x: 57, y: 32 },
+    { id: 9, label: 'Remaja I', screentime: 5, anxiety: 27, x: 71, y: 22 },
+    { id: 10, label: 'Remaja J', screentime: 6, anxiety: 23, x: 85, y: 14 }
+  ]
+}
 
 export default function EksplorasiDiagramPencar() {
   const navigate = useNavigate()
@@ -27,11 +67,32 @@ export default function EksplorasiDiagramPencar() {
   const [xScale, setXScale] = useState(null)
   const [yScale, setYScale] = useState(null)
   
-  // Step 2: Input data points
-  const [inputtedPoints, setInputtedPoints] = useState([])
-  const [currentInputIndex, setCurrentInputIndex] = useState(0)
-  const [inputX, setInputX] = useState('')
-  const [inputY, setInputY] = useState('')
+  // Step 2: Place data points on grid (NEW SYSTEM)
+  const [placedPoints, setPlacedPoints] = useState([])
+  const [currentDataIndex, setCurrentDataIndex] = useState(0)
+  const [attemptFeedback, setAttemptFeedback] = useState(null) // success/error message
+  
+  // Zoom/Pan for mobile
+  const [zoomLevel, setZoomLevel] = useState(1) // DEPRECATED - tidak dipakai lagi
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
+  
+  // Visual zoom for Step 2 & 3 (CSS transform, not dimensions)
+  const [visualZoom, setVisualZoom] = useState(1)
+  const [visualZoomStep2, setVisualZoomStep2] = useState(1) // Separate zoom for Step 2
+  
+  // Pan/drag state for scrollable chart
+  const [isPanning, setIsPanning] = useState(false)
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 })
+  
+  // Mobile fullscreen for chart only
+  const [isMobileChartFullscreen, setIsMobileChartFullscreen] = useState(false)
+  
+  // Highlighted grid lines when clicking axis numbers
+  const [highlightedX, setHighlightedX] = useState(null)
+  const [highlightedY, setHighlightedY] = useState(null)
+  
+  // Toggle UI visibility in fullscreen modal
+  const [isUIVisible, setIsUIVisible] = useState(true)
   
   // Step 3: Draw regression line
   const [regressionLine, setRegressionLine] = useState(null)
@@ -40,6 +101,18 @@ export default function EksplorasiDiagramPencar() {
   
   // Step 4: Calculate correlation
   const [correlationScore, setCorrelationScore] = useState(null)
+  
+  // Step 5: Interactive Scatter Plot Explorer (after completing Step 4)
+  const [correlationMatching, setCorrelationMatching] = useState({
+    positif: null,
+    tidakAda: null,
+    negatif: null
+  })
+  const [selectedScatterType, setSelectedScatterType] = useState('positif') // 'positif', 'tidakAda', 'negatif'
+  
+  // Custom Alert Modal
+  const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' })
   
   // Tooltip for clicked data point
   const [selectedPoint, setSelectedPoint] = useState(null)
@@ -51,10 +124,13 @@ export default function EksplorasiDiagramPencar() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
   
-  // Chart dimensions
-  const chartWidth = 600
-  const chartHeight = 600
-  const padding = 60
+  // Chart dimensions - RECTANGULAR: wider for X-axis spacing
+  const baseChartWidth = 1600  // ← Lebih lebar untuk X spacing
+  const baseChartHeight = 1200
+  // Both Step 2 and Step 3 use base size with CSS zoom (transform: scale)
+  const chartWidth = baseChartWidth
+  const chartHeight = baseChartHeight
+  const padding = 80
 
   // Database functions for progress persistence
   const saveProgressToDB = async () => {
@@ -73,8 +149,8 @@ export default function EksplorasiDiagramPencar() {
         y_axis_var: yAxisVar,
         x_scale: xScale,
         y_scale: yScale,
-        inputted_points: inputtedPoints,
-        current_input_index: currentInputIndex,
+        inputted_points: placedPoints,
+        current_input_index: currentDataIndex,
         regression_line: regressionLine,
         correlation_score: correlationScore,
         checked_rows: checkedRows,
@@ -130,8 +206,8 @@ export default function EksplorasiDiagramPencar() {
         if (data.y_axis_var) setYAxisVar(data.y_axis_var)
         if (data.x_scale) setXScale(data.x_scale)
         if (data.y_scale) setYScale(data.y_scale)
-        if (data.inputted_points) setInputtedPoints(data.inputted_points)
-        if (data.current_input_index !== undefined) setCurrentInputIndex(data.current_input_index)
+        if (data.inputted_points) setPlacedPoints(data.inputted_points)
+        if (data.current_input_index !== undefined) setCurrentDataIndex(data.current_input_index)
         if (data.regression_line) setRegressionLine(data.regression_line)
         if (data.correlation_score !== undefined) setCorrelationScore(data.correlation_score)
         if (data.checked_rows) setCheckedRows(data.checked_rows)
@@ -230,26 +306,321 @@ export default function EksplorasiDiagramPencar() {
       
       return () => clearTimeout(timeoutId)
     }
-  }, [currentStep, inputtedPoints, regressionLine, correlationScore, checkedRows, kelasId])
+  }, [currentStep, placedPoints, regressionLine, correlationScore, checkedRows, kelasId])
 
   // Auto-navigate to the correct page when inputting data
   useEffect(() => {
-    if (currentStep === 2 && currentInputIndex >= 0) {
-      const targetPage = Math.floor(currentInputIndex / itemsPerPage) + 1
+    if (currentStep === 2 && currentDataIndex >= 0) {
+      const targetPage = Math.floor(currentDataIndex / itemsPerPage) + 1
       if (targetPage !== currentPage) {
         setCurrentPage(targetPage)
       }
     }
-  }, [currentStep, currentInputIndex])
+  }, [currentStep, currentDataIndex])
 
   // Helper: Convert value to coordinate
   const valueToCoord = (value, max, dimension) => {
     return padding + (value / max) * (dimension - 2 * padding)
   }
 
+  // Render Chart SVG (reusable for main and mobile fullscreen)
+  const renderChartSVG = () => (
+    <svg
+      width={chartWidth}
+      height={chartHeight}
+      viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+      className="border-2 border-gray-400 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100"
+      style={currentStep === 3 ? { touchAction: 'none' } : undefined}
+    >
+      {/* No transform wrapper - using actual dimensions */}
+      
+      {/* Grid lines - every 1 unit (with highlight) */}
+      {xScale && yScale && (
+        <>
+          {Array.from({ length: xScale + 1 }, (_, i) => i).map((val, i) => (
+            <g key={`grid-x-${i}`}>
+              <line
+                x1={valueToCoord(val, xScale, chartWidth)}
+                y1={padding}
+                x2={valueToCoord(val, xScale, chartWidth)}
+                y2={chartHeight - padding}
+                stroke={highlightedX === val ? "#3b82f6" : "#d1d5db"}
+                strokeWidth={highlightedX === val ? "3" : "1"}
+                opacity={highlightedX === val ? "1" : "0.5"}
+              />
+            </g>
+          ))}
+          {Array.from({ length: yScale + 1 }, (_, i) => i).map((val, i) => (
+            <g key={`grid-y-${i}`}>
+              <line
+                x1={padding}
+                y1={valueToCoord(yScale - val, yScale, chartHeight)}
+                x2={chartWidth - padding}
+                y2={valueToCoord(yScale - val, yScale, chartHeight)}
+                stroke={highlightedY === val ? "#3b82f6" : "#d1d5db"}
+                strokeWidth={highlightedY === val ? "3" : "1"}
+                opacity={highlightedY === val ? "1" : "0.5"}
+              />
+            </g>
+          ))}
+        </>
+      )}
+
+      {/* Main Axes with manual arrows */}
+      <line
+        x1={padding}
+        y1={chartHeight - padding}
+        x2={chartWidth - padding - 15}
+        y2={chartHeight - padding}
+        stroke="#1f2937"
+        strokeWidth="3"
+      />
+      <polygon
+        points={`${chartWidth - padding - 15},${chartHeight - padding - 6} ${chartWidth - padding},${chartHeight - padding} ${chartWidth - padding - 15},${chartHeight - padding + 6}`}
+        fill="#1f2937"
+      />
+      
+      <line
+        x1={padding}
+        y1={chartHeight - padding}
+        x2={padding}
+        y2={padding + 15}
+        stroke="#1f2937"
+        strokeWidth="3"
+      />
+      <polygon
+        points={`${padding - 6},${padding + 15} ${padding},${padding} ${padding + 6},${padding + 15}`}
+        fill="#1f2937"
+      />
+
+      {/* Axis labels */}
+      {xAxisVar && (
+        <text
+          x={chartWidth / 2}
+          y={chartHeight - 10}
+          textAnchor="middle"
+          fontSize="14"
+          fill="#1f2937"
+          fontWeight="600"
+        >
+          {xAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
+          {xScale && ` (0-${xScale})`}
+        </text>
+      )}
+      {yAxisVar && (
+        <text
+          x={20}
+          y={chartHeight / 2}
+          textAnchor="middle"
+          fontSize="14"
+          fill="#1f2937"
+          fontWeight="600"
+          transform={`rotate(-90, 20, ${chartHeight / 2})`}
+        >
+          {yAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
+          {yScale && ` (0-${yScale})`}
+        </text>
+      )}
+
+      {/* Scale markers - CLICKABLE, NORMAL orientation (no rotation) */}
+      {xScale && yScale && (
+        <>
+          {/* X-axis labels - NORMAL horizontal (enough space now) */}
+          {Array.from({ length: xScale + 1 }, (_, i) => i).map((val) => (
+            <text
+              key={`x-${val}`}
+              x={valueToCoord(val, xScale, chartWidth)}
+              y={chartHeight - padding + 20}
+              textAnchor="middle"
+              fontSize="11"
+              fill={highlightedX === val ? "#3b82f6" : "#374151"}
+              fontWeight={highlightedX === val ? "bold" : "normal"}
+              style={{ cursor: 'pointer' }}
+              onClick={(e) => handleAxisNumberClick('x', val, e)}
+            >
+              {val}
+            </text>
+          ))}
+          {/* Y-axis labels - NORMAL */}
+          {Array.from({ length: yScale + 1 }, (_, i) => i).map((val) => (
+            <text
+              key={`y-${val}`}
+              x={padding - 20}
+              y={valueToCoord(yScale - val, yScale, chartHeight) + 4}
+              textAnchor="middle"
+              fontSize="11"
+              fill={highlightedY === val ? "#3b82f6" : "#374151"}
+              fontWeight={highlightedY === val ? "bold" : "normal"}
+              style={{ cursor: 'pointer' }}
+              onClick={(e) => handleAxisNumberClick('y', val, e)}
+            >
+              {val}
+            </text>
+          ))}
+        </>
+      )}
+
+      {/* Clickable zones - only if scale selected */}
+      {currentStep === 2 && xScale && yScale && (
+        <>
+          {Array.from({ length: (xScale + 1) * (yScale + 1) }, (_, idx) => {
+            const xVal = idx % (xScale + 1)
+            const yVal = Math.floor(idx / (xScale + 1))
+            const cx = valueToCoord(xVal, xScale, chartWidth)
+            const cy = valueToCoord(yScale - yVal, yScale, chartHeight)
+            
+            return (
+              <circle
+                key={`zone-${xVal}-${yVal}`}
+                cx={cx}
+                cy={cy}
+                r="8"
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => handleGridClick(xVal, yVal, e)}
+                onMouseEnter={(e) => e.target.style.fill = 'rgba(59, 130, 246, 0.2)'}
+                onMouseLeave={(e) => e.target.style.fill = 'transparent'}
+              />
+            )
+          })}
+        </>
+      )}
+
+      {/* Data points */}
+      {placedPoints.map((point, idx) => {
+        const cx = valueToCoord(point.x, xScale, chartWidth)
+        const cy = valueToCoord(yScale - point.y, yScale, chartHeight)
+        
+        return (
+          <g key={idx}>
+            {/* Clickable area (larger invisible circle for easier tapping) */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r="12"
+              fill="transparent"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPoint(selectedPoint === idx ? null : idx)}
+            />
+            {/* Visible point */}
+            <circle
+              cx={cx}
+              cy={cy}
+              r="5"
+              fill={selectedPoint === idx ? '#f59e0b' : '#3b82f6'}
+              stroke={selectedPoint === idx ? '#d97706' : '#1e40af'}
+              strokeWidth="2"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setSelectedPoint(selectedPoint === idx ? null : idx)}
+            />
+            {/* Tooltip when point is selected */}
+            {selectedPoint === idx && (
+              <g>
+                <rect
+                  x={cx + 10}
+                  y={cy - 35}
+                  width="120"
+                  height="30"
+                  rx="6"
+                  fill="#1f2937"
+                  fillOpacity="0.9"
+                />
+                <polygon
+                  points={`${cx + 10},${cy - 10} ${cx + 18},${cy - 5} ${cx + 18},${cy - 15}`}
+                  fill="#1f2937"
+                  fillOpacity="0.9"
+                />
+                <text
+                  x={cx + 70}
+                  y={cy - 16}
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill="white"
+                  fontWeight="600"
+                >
+                  #{point.no} ({point.x}, {point.y})
+                </text>
+              </g>
+            )}
+          </g>
+        )
+      })}
+
+      {/* Regression line */}
+      {regressionLine && currentStep >= 3 && (
+        <g>
+          <line
+            x1={regressionLine.x1}
+            y1={regressionLine.y1}
+            x2={regressionLine.x2}
+            y2={regressionLine.y2}
+            stroke="#dc2626"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          
+          {/* Draggable control points for Step 3 - BIGGER & MORE COMFORTABLE */}
+          {currentStep === 3 && (
+            <>
+              {/* Start point - larger touch target */}
+              <circle
+                cx={regressionLine.x1}
+                cy={regressionLine.y1}
+                r="25"
+                fill="transparent"
+                style={{ cursor: 'grab', touchAction: 'none' }}
+                onMouseDown={(e) => handleLineMouseDown(e, 'start')}
+                onTouchStart={(e) => handleLineTouchStart(e, 'start')}
+              />
+              <circle
+                cx={regressionLine.x1}
+                cy={regressionLine.y1}
+                r="15"
+                fill="#dc2626"
+                stroke="#ffffff"
+                strokeWidth="4"
+                style={{ cursor: 'grab', pointerEvents: 'none' }}
+              />
+              {/* End point - larger touch target */}
+              <circle
+                cx={regressionLine.x2}
+                cy={regressionLine.y2}
+                r="25"
+                fill="transparent"
+                style={{ cursor: 'grab', touchAction: 'none' }}
+                onMouseDown={(e) => handleLineMouseDown(e, 'end')}
+                onTouchStart={(e) => handleLineTouchStart(e, 'end')}
+              />
+              <circle
+                cx={regressionLine.x2}
+                cy={regressionLine.y2}
+                r="15"
+                fill="#dc2626"
+                stroke="#ffffff"
+                strokeWidth="4"
+                style={{ cursor: 'grab', pointerEvents: 'none' }}
+              />
+            </>
+          )}
+        </g>
+      )}
+      
+    </svg>
+  )
+
   // Step 1: Handle axis selection and auto-generate scales
   const handleAxisSelection = (axis, variable) => {
     if (axis === 'x') {
+      // Validation: X-axis HARUS bullying
+      if (variable === 'anxiety') {
+        setAlertMessage({
+          title: '❌ Sumbu X Harus Variabel Bullying!',
+          message: 'Dalam diagram pencar, variabel independen (X) adalah Bullying, dan variabel dependen (Y) adalah Kecemasan.'
+        })
+        setShowAlert(true)
+        return // Reject selection
+      }
+      
       setXAxisVar(variable)
       setYAxisVar(variable === 'bullying' ? 'anxiety' : 'bullying')
     }
@@ -273,61 +644,138 @@ export default function EksplorasiDiagramPencar() {
       
       // Go directly to step 2 (input data)
       setCurrentStep(2)
-      setCurrentInputIndex(0)
+      setCurrentDataIndex(0)
     }
   }
-  // Step 2: Handle data input
-  const handleDataInput = () => {
-    const x = parseFloat(inputX)
-    const y = parseFloat(inputY)
-    
-    if (isNaN(x) || isNaN(y)) {
-      alert('Masukkan angka yang valid!')
-      return
+  // Step 2: Handle grid click to place point (NEW SYSTEM)
+  const handleGridClick = (clickedX, clickedY, e) => {
+    if (e) {
+      e.stopPropagation() // Prevent toggle UI
     }
+    if (currentDataIndex >= surveyData.length) return
     
-    if (x < 0 || x > xScale || y < 0 || y > yScale) {
-      alert(`Nilai harus dalam range 0-${xScale} untuk X dan 0-${yScale} untuk Y!`)
-      return
-    }
+    const currentData = surveyData[currentDataIndex]
+    const correctX = currentData[xAxisVar]
+    const correctY = currentData[yAxisVar]
     
-    const newPoint = {
-      no: surveyData[currentInputIndex].no,
-      x: x,
-      y: y,
-      actualX: surveyData[currentInputIndex][xAxisVar],
-      actualY: surveyData[currentInputIndex][yAxisVar]
-    }
-    
-    setInputtedPoints([...inputtedPoints, newPoint])
-    setInputX('')
-    setInputY('')
-    
-    if (currentInputIndex + 1 < surveyData.length) {
-      setCurrentInputIndex(currentInputIndex + 1)
+    // Validation: exact match required
+    if (clickedX === correctX && clickedY === correctY) {
+      // ✅ Correct placement
+      const newPoint = {
+        no: currentData.no,
+        x: correctX,
+        y: correctY,
+        bullying: currentData.bullying,
+        anxiety: currentData.anxiety
+      }
+      
+      setPlacedPoints([...placedPoints, newPoint])
+      setAttemptFeedback({ type: 'success', message: '✅ Benar! Titik berhasil ditempatkan!' })
+      
+      // Mark row as checked
+      setCheckedRows(prev => ({ ...prev, [currentData.id]: true }))
+      
+      // Move to next data
+      setTimeout(() => {
+        if (currentDataIndex + 1 < surveyData.length) {
+          setCurrentDataIndex(currentDataIndex + 1)
+          setAttemptFeedback(null)
+        } else {
+          // All data placed, move to step 3
+          setCurrentStep(3)
+          setAttemptFeedback(null)
+          // Initialize regression line di tengah
+          setRegressionLine({
+            x1: padding + 50,
+            y1: chartHeight - padding - 50,
+            x2: chartWidth - padding - 50,
+            y2: padding + 50
+          })
+        }
+      }, 1000)
+      
     } else {
-      setCurrentStep(3)
-      // Initialize regression line di tengah
-      setRegressionLine({
-        x1: padding + 50,
-        y1: chartHeight - padding - 50,
-        x2: chartWidth - padding - 50,
-        y2: padding + 50
+      // ❌ Wrong placement
+      setAttemptFeedback({ 
+        type: 'error', 
+        message: `❌ Salah! Coba lagi.` 
       })
+      
+      // Clear feedback after 2 seconds
+      setTimeout(() => setAttemptFeedback(null), 2000)
+    }
+  }
+
+  // Zoom controls for mobile
+  const handleZoomIn = () => {
+    if (currentStep === 2) {
+      setVisualZoomStep2(prev => Math.min(prev + 0.2, 3)) // Max 3x zoom (CSS scale)
+    } else if (currentStep === 3) {
+      setVisualZoom(prev => Math.min(prev + 0.2, 2)) // Max 2x visual zoom
+    }
+  }
+
+  const handleZoomOut = () => {
+    if (currentStep === 2) {
+      setVisualZoomStep2(prev => Math.max(prev - 0.2, 0.5)) // Min 0.5x zoom (50%) - CSS scale!
+    } else if (currentStep === 3) {
+      setVisualZoom(prev => Math.max(prev - 0.2, 0.5)) // Min 0.5x (zoom out!)
+    }
+  }
+
+  const handleResetZoom = () => {
+    if (currentStep === 2) {
+      setVisualZoomStep2(1)
+      setPanOffset({ x: 0, y: 0 })
+    } else if (currentStep === 3) {
+      setVisualZoom(1)
+    }
+  }
+
+  // Handle axis number click to highlight grid
+  const handleAxisNumberClick = (axis, value, e) => {
+    if (e) {
+      e.stopPropagation() // Prevent toggle UI
+    }
+    if (axis === 'x') {
+      setHighlightedX(highlightedX === value ? null : value) // Toggle
+    } else {
+      setHighlightedY(highlightedY === value ? null : value) // Toggle
+    }
+  }
+
+  // Toggle UI visibility in fullscreen modal
+  const handleToggleUI = (e) => {
+    // Prevent toggle during drag
+    if (isDragging) return
+    setIsUIVisible(prev => !prev)
+  }
+
+  const handleChartContainerClick = (e) => {
+    // Only toggle if clicking directly on non-interactive elements
+    const target = e.target
+    const tagName = target.tagName.toLowerCase()
+    
+    // Check if it's an interactive element (has onClick, cursor pointer, etc)
+    const isInteractive = target.style.cursor === 'pointer' || target.onclick
+    
+    // Only toggle on background elements (div, svg background rect) that are NOT interactive
+    if (!isDragging && !isInteractive && (tagName === 'div' || tagName === 'svg' || (tagName === 'rect' && !target.onclick))) {
+      handleToggleUI(e)
     }
   }
 
   // Step 3: Handle regression line drawing
   const handleLineMouseDown = (e, point) => {
     e.preventDefault()
-    e.stopPropagation()
+    e.stopPropagation() // Prevent toggle UI
     setIsDragging(true)
     setDragPoint(point)
   }
 
   const handleLineTouchStart = (e, point) => {
-    e.preventDefault()
-    e.stopPropagation()
+    // Don't call preventDefault here - use CSS touch-action instead
+    e.stopPropagation() // Prevent toggle UI
     setIsDragging(true)
     setDragPoint(point)
   }
@@ -372,7 +820,7 @@ export default function EksplorasiDiagramPencar() {
 
   const handleChartTouchMove = (e) => {
     if (!isDragging || !dragPoint) return
-    e.preventDefault()
+    // Don't call preventDefault here - use CSS touch-action instead
     const rect = e.currentTarget.getBoundingClientRect()
     const pos = getPointerPosition(e, rect)
     
@@ -405,8 +853,8 @@ export default function EksplorasiDiagramPencar() {
 
   // Step 4: Calculate correlation
   const calculateCorrelation = () => {
-    const xValues = inputtedPoints.map(p => p.x)
-    const yValues = inputtedPoints.map(p => p.y)
+    const xValues = placedPoints.map(p => p.x)
+    const yValues = placedPoints.map(p => p.y)
     
     const n = xValues.length
     const sumX = xValues.reduce((a, b) => a + b, 0)
@@ -433,10 +881,11 @@ export default function EksplorasiDiagramPencar() {
     setYAxisVar(null)
     setXScale(null)
     setYScale(null)
-    setInputtedPoints([])
-    setCurrentInputIndex(0)
-    setInputX('')
-    setInputY('')
+    setPlacedPoints([])
+    setCurrentDataIndex(0)
+    setAttemptFeedback(null)
+    setVisualZoomStep2(1)
+    setPanOffset({ x: 0, y: 0 })
     setRegressionLine(null)
     setCorrelationScore(null)
     setSelectedPoint(null)
@@ -448,7 +897,7 @@ export default function EksplorasiDiagramPencar() {
       case 1:
         return 'Langkah 1: Tentukan variabel untuk sumbu X dan Y! 📊'
       case 2:
-        return 'Langkah 2: Input data dari tabel ke diagram! ✏️'
+        return 'Langkah 2: Klik pada diagram untuk menempatkan titik data! 🎯'
       case 3:
         return 'Langkah 3: Gambar garis regresi dengan menarik titik merah! 📈'
       case 4:
@@ -567,9 +1016,9 @@ export default function EksplorasiDiagramPencar() {
           )}
         </div>
 
-        {/* Main Content - akan saya lanjutkan di bagian berikutnya karena sangat panjang */}
+        {/* Main Content - Chart BIGGER, Info Smaller */}
         
-        <div className="grid lg:grid-cols-[1fr_600px] gap-8">
+        <div className="grid lg:grid-cols-[400px_1fr] gap-6">
           
           {/* Left Panel: Instructions & Controls */}
           <div className="space-y-6">
@@ -790,7 +1239,7 @@ export default function EksplorasiDiagramPencar() {
               </motion.div>
             )}
 
-            {/* Step 2: Data Input */}
+            {/* Step 2: Grid-Based Data Placement */}
             {currentStep === 2 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -798,68 +1247,92 @@ export default function EksplorasiDiagramPencar() {
                 className="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-6 border-2 border-green-400"
               >
                 <h3 className="text-lg font-poppins font-semibold text-ink-900 mb-4">
-                  ✏️ Input Data Titik
+                  🎯 Klik Diagram untuk Menempatkan Titik
                 </h3>
                 
-                <div className="bg-white rounded-lg p-4 mb-4">
-                  <p className="text-sm text-ink-700 mb-2">
-                    Input data :
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-ink-600 block mb-1">
-                        Nilai X ({xAxisVar === 'bullying' ? 'Bullying' : 'Kecemasan'})
-                      </label>
-                      <input
-                        type="number"
-                        value={inputX}
-                        onChange={(e) => setInputX(e.target.value)}
-                        placeholder="0"
-                        min="0"
-                        max={xScale}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-primary-500 outline-none"
-                      />
+                {/* Current data info */}
+                {currentDataIndex < surveyData.length && (
+                  <div className="bg-white rounded-lg p-4 mb-4">
+                    <p className="text-sm text-ink-700 mb-2 font-semibold">
+                      Data Responden #{surveyData[currentDataIndex].no}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <p className="text-xs text-ink-600 mb-1">Bullying</p>
+                        <p className="text-lg font-bold text-blue-700">{surveyData[currentDataIndex].bullying}</p>
+                      </div>
+                      <div className="bg-orange-50 p-3 rounded-lg">
+                        <p className="text-xs text-ink-600 mb-1">Kecemasan</p>
+                        <p className="text-lg font-bold text-orange-700">{surveyData[currentDataIndex].anxiety}</p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-ink-600 block mb-1">
-                        Nilai Y ({yAxisVar === 'bullying' ? 'Bullying' : 'Kecemasan'})
-                      </label>
-                      <input
-                        type="number"
-                        value={inputY}
-                        onChange={(e) => setInputY(e.target.value)}
-                        placeholder="0"
-                        min="0"
-                        max={yScale}
-                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-primary-500 outline-none"
-                      />
-                    </div>
+                    <p className="text-xs text-ink-500 mt-2">
+                      💡 Klik pada diagram sesuai koordinat (X, Y) yang benar
+                    </p>
                   </div>
-                </div>
+                )}
 
+                {/* Attempt feedback */}
+                {attemptFeedback && (
+                  <div className={`rounded-lg p-3 mb-4 ${
+                    attemptFeedback.type === 'success' 
+                      ? 'bg-green-100 border border-green-400' 
+                      : 'bg-red-100 border border-red-400'
+                  }`}>
+                    <p className={`text-sm font-medium ${
+                      attemptFeedback.type === 'success' ? 'text-green-800' : 'text-red-800'
+                    }`}>
+                      {attemptFeedback.message}
+                    </p>
+                  </div>
+                )}
+
+                {/* Progress bar */}
                 <div className="bg-blue-50 rounded-lg p-3 mb-4">
                   <p className="text-xs text-blue-800">
-                    Progress: {inputtedPoints.length} / {surveyData.length} data sudah diinput
+                    Progress: {placedPoints.length} / {surveyData.length} data sudah ditempatkan
                   </p>
                   <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
                     <div 
                       className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{ width: `${(inputtedPoints.length / surveyData.length) * 100}%` }}
+                      style={{ width: `${(placedPoints.length / surveyData.length) * 100}%` }}
                     ></div>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleDataInput}
-                  disabled={!inputX || !inputY}
-                  className={`w-full px-4 py-3 rounded-xl font-semibold transition-all ${
-                    inputX && inputY
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  {currentInputIndex + 1 < surveyData.length ? 'Input & Lanjut ke Data Berikutnya' : 'Input Data Terakhir & Lanjut'}
-                </button>
+                {/* Zoom controls - mobile friendly */}
+                <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+                  <span className="text-xs text-gray-700 font-medium">Zoom (Perlebar Grid)</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleZoomOut}
+                      disabled={visualZoomStep2 <= 0.5}
+                      className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      aria-label="Zoom out"
+                    >
+                      <span className="text-lg font-bold text-gray-700">−</span>
+                    </button>
+                    <span className="text-sm font-medium text-gray-700 w-12 text-center">
+                      {(zoomLevel * 100).toFixed(0)}%
+                    </span>
+                    <button
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 3}
+                      className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      aria-label="Zoom in"
+                    >
+                      <span className="text-lg font-bold text-gray-700">+</span>
+                    </button>
+                    {zoomLevel !== 1 && (
+                      <button
+                        onClick={handleResetZoom}
+                        className="ml-2 px-3 py-1 text-xs rounded-md bg-primary-100 text-primary-700 hover:bg-primary-200"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -962,16 +1435,17 @@ export default function EksplorasiDiagramPencar() {
 
           </div>
 
-          {/* Right Panel: Chart */}
-          <div className="lg:order-2">
-            <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-300 lg:sticky lg:top-8">
+          {/* Right Panel: Chart - CONTAINED */}
+          <div className="lg:order-2 min-w-0">
+            <div className="bg-white rounded-xl p-6 shadow-xl border-2 border-gray-300 lg:sticky lg:top-8 overflow-hidden">
               <h3 className="text-lg font-semibold text-ink-900 mb-4">
                 📈 Diagram Kartesius
               </h3>
               
-              {/* SVG Chart - akan dilengkapi */}
+              {/* SVG Chart - Scrollable when zoomed (CONTAINED) */}
               <div 
-                className="relative"
+                className="relative overflow-auto bg-gray-50 rounded-lg p-2"
+                style={{ maxHeight: '800px', maxWidth: '100%' }}
                 onMouseMove={currentStep === 3 ? handleChartMouseMove : undefined}
                 onMouseUp={currentStep === 3 ? handleChartMouseUp : undefined}
                 onMouseLeave={currentStep === 3 ? handleChartMouseUp : undefined}
@@ -979,256 +1453,21 @@ export default function EksplorasiDiagramPencar() {
                 onTouchEnd={currentStep === 3 ? handleChartMouseUp : undefined}
                 onTouchCancel={currentStep === 3 ? handleChartMouseUp : undefined}
               >
-                <svg
-                  width="100%"
-                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                  className="border-2 border-gray-400 rounded-lg bg-gradient-to-br from-gray-50 to-gray-100"
-                  style={currentStep === 3 ? { touchAction: 'none' } : undefined}
-                >
-                  {/* Grid lines - only if scale selected */}
-                  {xScale && yScale && (
-                    <>
-                      {Array.from({ length: 11 }, (_, i) => i * (xScale / 10)).map((val, i) => (
-                        <g key={`grid-x-${i}`}>
-                          <line
-                            x1={valueToCoord(val, xScale, chartWidth)}
-                            y1={padding}
-                            x2={valueToCoord(val, xScale, chartWidth)}
-                            y2={chartHeight - padding}
-                            stroke="#e5e7eb"
-                            strokeWidth="1"
-                            strokeDasharray="4 2"
-                          />
-                        </g>
-                      ))}
-                      {Array.from({ length: 11 }, (_, i) => i * (yScale / 10)).map((val, i) => (
-                        <g key={`grid-y-${i}`}>
-                          <line
-                            x1={padding}
-                            y1={valueToCoord(yScale - val, yScale, chartHeight)}
-                            x2={chartWidth - padding}
-                            y2={valueToCoord(yScale - val, yScale, chartHeight)}
-                            stroke="#e5e7eb"
-                            strokeWidth="1"
-                            strokeDasharray="4 2"
-                          />
-                        </g>
-                      ))}
-                    </>
-                  )}
-
-                  {/* Main Axes with manual arrows */}
-                  {/* X-axis line */}
-                  <line
-                    x1={padding}
-                    y1={chartHeight - padding}
-                    x2={chartWidth - padding - 15}
-                    y2={chartHeight - padding}
-                    stroke="#1f2937"
-                    strokeWidth="3"
-                  />
-                  {/* X-axis arrow → */}
-                  <polygon
-                    points={`${chartWidth - padding - 15},${chartHeight - padding - 6} ${chartWidth - padding},${chartHeight - padding} ${chartWidth - padding - 15},${chartHeight - padding + 6}`}
-                    fill="#1f2937"
-                  />
-                  
-                  {/* Y-axis line */}
-                  <line
-                    x1={padding}
-                    y1={chartHeight - padding}
-                    x2={padding}
-                    y2={padding + 15}
-                    stroke="#1f2937"
-                    strokeWidth="3"
-                  />
-                  {/* Y-axis arrow ↑ */}
-                  <polygon
-                    points={`${padding - 6},${padding + 15} ${padding},${padding} ${padding + 6},${padding + 15}`}
-                    fill="#1f2937"
-                  />
-
-                  {/* Axis labels */}
-                  {xAxisVar && (
-                    <text
-                      x={chartWidth / 2}
-                      y={chartHeight - 10}
-                      textAnchor="middle"
-                      fontSize="14"
-                      fill="#1f2937"
-                      fontWeight="600"
-                    >
-                      {xAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
-                      {xScale && ` (0-${xScale})`}
-                    </text>
-                  )}
-                  {yAxisVar && (
-                    <text
-                      x={20}
-                      y={chartHeight / 2}
-                      textAnchor="middle"
-                      fontSize="14"
-                      fill="#1f2937"
-                      fontWeight="600"
-                      transform={`rotate(-90, 20, ${chartHeight / 2})`}
-                    >
-                      {yAxisVar === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'}
-                      {yScale && ` (0-${yScale})`}
-                    </text>
-                  )}
-
-                  {/* Scale markers */}
-                  {xScale && yScale && (
-                    <>
-                      {Array.from({ length: 6 }, (_, i) => i * (xScale / 5)).map((val) => (
-                        <text
-                          key={`x-${val}`}
-                          x={valueToCoord(val, xScale, chartWidth)}
-                          y={chartHeight - padding + 20}
-                          textAnchor="middle"
-                          fontSize="11"
-                          fill="#374151"
-                        >
-                          {Math.round(val)}
-                        </text>
-                      ))}
-                      {Array.from({ length: 6 }, (_, i) => i * (yScale / 5)).map((val) => (
-                        <text
-                          key={`y-${val}`}
-                          x={padding - 20}
-                          y={valueToCoord(yScale - val, yScale, chartHeight) + 4}
-                          textAnchor="middle"
-                          fontSize="11"
-                          fill="#374151"
-                        >
-                          {Math.round(val)}
-                        </text>
-                      ))}
-                    </>
-                  )}
-
-                  {/* Data points */}
-                  {inputtedPoints.map((point, idx) => {
-                    const cx = valueToCoord(point.x, xScale, chartWidth)
-                    const cy = valueToCoord(yScale - point.y, yScale, chartHeight)
-                    
-                    return (
-                      <g key={idx}>
-                        {/* Clickable area (larger invisible circle for easier tapping) */}
-                        <circle
-                          cx={cx}
-                          cy={cy}
-                          r="12"
-                          fill="transparent"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedPoint(selectedPoint === idx ? null : idx)}
-                        />
-                        {/* Visible point */}
-                        <circle
-                          cx={cx}
-                          cy={cy}
-                          r="5"
-                          fill={selectedPoint === idx ? '#f59e0b' : '#3b82f6'}
-                          stroke={selectedPoint === idx ? '#d97706' : '#1e40af'}
-                          strokeWidth="2"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedPoint(selectedPoint === idx ? null : idx)}
-                        />
-                        {/* Tooltip when point is selected */}
-                        {selectedPoint === idx && (
-                          <g>
-                            <rect
-                              x={cx + 10}
-                              y={cy - 35}
-                              width="120"
-                              height="30"
-                              rx="6"
-                              fill="#1f2937"
-                              fillOpacity="0.9"
-                            />
-                            <polygon
-                              points={`${cx + 10},${cy - 10} ${cx + 18},${cy - 5} ${cx + 18},${cy - 15}`}
-                              fill="#1f2937"
-                              fillOpacity="0.9"
-                            />
-                            <text
-                              x={cx + 70}
-                              y={cy - 16}
-                              textAnchor="middle"
-                              fontSize="12"
-                              fill="white"
-                              fontWeight="600"
-                            >
-                              #{point.no} ({point.x}, {point.y})
-                            </text>
-                          </g>
-                        )}
-                      </g>
-                    )
-                  })}
-
-                  {/* Regression line */}
-                  {regressionLine && currentStep >= 3 && (
-                    <g>
-                      <line
-                        x1={regressionLine.x1}
-                        y1={regressionLine.y1}
-                        x2={regressionLine.x2}
-                        y2={regressionLine.y2}
-                        stroke="#dc2626"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                      />
-                      {currentStep === 3 && (
-                        <>
-                          {/* Start point - larger touch target */}
-                          <circle
-                            cx={regressionLine.x1}
-                            cy={regressionLine.y1}
-                            r="20"
-                            fill="transparent"
-                            style={{ cursor: 'grab' }}
-                            onMouseDown={(e) => handleLineMouseDown(e, 'start')}
-                            onTouchStart={(e) => handleLineTouchStart(e, 'start')}
-                          />
-                          <circle
-                            cx={regressionLine.x1}
-                            cy={regressionLine.y1}
-                            r="10"
-                            fill="#dc2626"
-                            stroke="#fff"
-                            strokeWidth="3"
-                            style={{ cursor: 'grab' }}
-                            onMouseDown={(e) => handleLineMouseDown(e, 'start')}
-                            onTouchStart={(e) => handleLineTouchStart(e, 'start')}
-                          />
-                          {/* End point - larger touch target */}
-                          <circle
-                            cx={regressionLine.x2}
-                            cy={regressionLine.y2}
-                            r="20"
-                            fill="transparent"
-                            style={{ cursor: 'grab' }}
-                            onMouseDown={(e) => handleLineMouseDown(e, 'end')}
-                            onTouchStart={(e) => handleLineTouchStart(e, 'end')}
-                          />
-                          <circle
-                            cx={regressionLine.x2}
-                            cy={regressionLine.y2}
-                            r="10"
-                            fill="#dc2626"
-                            stroke="#fff"
-                            strokeWidth="3"
-                            style={{ cursor: 'grab' }}
-                            onMouseDown={(e) => handleLineMouseDown(e, 'end')}
-                            onTouchStart={(e) => handleLineTouchStart(e, 'end')}
-                          />
-                        </>
-                      )}
-                    </g>
-                  )}
-                </svg>
+                <div className="inline-block min-w-min">
+                  {renderChartSVG()}
+                </div>
               </div>
+
+              {/* Mobile: Button to open fullscreen chart (Step 2 & 3) */}
+              {(currentStep === 2 || currentStep === 3) && (
+                <button
+                  onClick={() => setIsMobileChartFullscreen(true)}
+                  className="mt-4 lg:hidden w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                  {currentStep === 2 ? 'Perbesar Diagram' : 'Perbesar'}
+                </button>
+              )}
 
               {currentStep === 3 && (
                 <p className="text-xs text-ink-500 mt-3 text-center">
@@ -1241,6 +1480,241 @@ export default function EksplorasiDiagramPencar() {
         </div>
 
       </div>
+
+      {/* Mobile Fullscreen Chart Modal (Step 2 & 3) */}
+      <AnimatePresence>
+        {isMobileChartFullscreen && (currentStep === 2 || currentStep === 3) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-white lg:hidden"
+            onClick={handleChartContainerClick}
+          >
+            {/* Chart Container - FULL SCREEN */}
+            <div 
+              className="absolute inset-0 overflow-auto"
+              style={{ touchAction: isDragging ? 'none' : 'auto' }}
+              onMouseMove={currentStep === 3 ? handleChartMouseMove : undefined}
+              onMouseUp={currentStep === 3 ? handleChartMouseUp : undefined}
+              onMouseLeave={currentStep === 3 ? handleChartMouseUp : undefined}
+              onTouchMove={currentStep === 3 ? handleChartTouchMove : undefined}
+              onTouchEnd={currentStep === 3 ? handleChartMouseUp : undefined}
+              onTouchCancel={currentStep === 3 ? handleChartMouseUp : undefined}
+            >
+              <div 
+                className="inline-block min-w-min"
+                style={{ 
+                  transform: `scale(${currentStep === 2 ? visualZoomStep2 : visualZoom})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease-out'
+                }}
+              >
+                {renderChartSVG()}
+              </div>
+            </div>
+
+            {/* Header - ABSOLUTE, ON TOP OF CHART */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : -200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-3 flex items-center justify-between shadow-lg"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-1">
+                <h2 className="text-lg font-bold">
+                  {currentStep === 2 ? '📊 Diagram Kartesius' : '📈 Atur Garis Regresi'}
+                </h2>
+                <p className="text-xs text-primary-100">
+                  {currentStep === 2 
+                    ? 'Ketuk chart untuk minimize/maximize UI'
+                    : 'Ketuk chart untuk minimize/maximize UI • Tarik garis merah'}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsMobileChartFullscreen(false)
+                }}
+                className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </motion.div>
+
+            {/* Current Data Info - ABSOLUTE, BELOW HEADER */}
+            {currentStep === 2 && currentDataIndex < surveyData.length && (
+              <motion.div 
+                initial={{ y: 0, opacity: 1 }}
+                animate={{ 
+                  y: isUIVisible ? 0 : -200,
+                  opacity: isUIVisible ? 1 : 0
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="absolute top-[60px] left-0 right-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-3 border-b-2 border-blue-200"
+                style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <p className="text-xs text-ink-600 mb-1">Responden #{surveyData[currentDataIndex].no}</p>
+                    <div className="flex gap-3">
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs text-blue-600">Bullying:</span>
+                        <span className="text-xl font-bold text-blue-700">{surveyData[currentDataIndex].bullying}</span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xs text-orange-600">Kecemasan:</span>
+                        <span className="text-xl font-bold text-orange-700">{surveyData[currentDataIndex].anxiety}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-ink-500">
+                    {placedPoints.length}/{surveyData.length}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Feedback Alert - ABSOLUTE, BELOW DATA INFO OR HEADER */}
+            {attemptFeedback && (
+              <motion.div 
+                initial={{ y: 0, opacity: 1 }}
+                animate={{ 
+                  y: isUIVisible ? 0 : -200,
+                  opacity: isUIVisible ? 1 : 0
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`absolute ${currentStep === 2 ? 'top-[140px]' : 'top-[60px]'} left-0 right-0 z-10 px-4 py-2 text-center font-medium ${
+                  attemptFeedback.type === 'success' 
+                    ? 'bg-green-100 text-green-800 border-b-2 border-green-400' 
+                    : 'bg-red-100 text-red-800 border-b-2 border-red-400'
+                }`}
+                style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {attemptFeedback.message}
+              </motion.div>
+            )}
+
+            {/* Zoom Controls - ABSOLUTE BOTTOM */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : 200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute bottom-10 left-0 right-0 z-10 bg-gray-50 px-4 py-3 border-t-2 border-gray-300 flex items-center justify-center gap-3"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleZoomOut}
+                disabled={currentStep === 2 ? visualZoomStep2 <= 0.5 : visualZoom <= 0.5}
+                className="w-12 h-12 rounded-full bg-white border-2 border-gray-400 flex items-center justify-center disabled:opacity-50 shadow-md"
+              >
+                <span className="text-2xl font-bold text-gray-700">−</span>
+              </button>
+              <span className="text-base font-bold text-gray-700 min-w-[60px] text-center">
+                {currentStep === 2 
+                  ? `${(visualZoomStep2 * 100).toFixed(0)}%`
+                  : `${(visualZoom * 100).toFixed(0)}%`}
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={currentStep === 2 ? visualZoomStep2 >= 3 : visualZoom >= 2}
+                className="w-12 h-12 rounded-full bg-white border-2 border-gray-400 flex items-center justify-center disabled:opacity-50 shadow-md"
+              >
+                <span className="text-2xl font-bold text-gray-700">+</span>
+              </button>
+              {((currentStep === 2 && zoomLevel !== 1) || (currentStep === 3 && visualZoom !== 1)) && (
+                <button
+                  onClick={handleResetZoom}
+                  className="px-4 py-2 text-sm rounded-lg bg-primary-600 text-white hover:bg-primary-700 font-medium shadow-md"
+                >
+                  Reset
+                </button>
+              )}
+            </motion.div>
+
+            {/* Hint - ABSOLUTE BOTTOM */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : 200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute bottom-0 left-0 right-0 z-10 bg-blue-50 px-4 py-2 text-center text-xs text-blue-800 border-t border-blue-200"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {currentStep === 2 
+                ? '💡 Ketuk chart untuk minimize/maximize UI • Klik angka di sumbu untuk highlight garis'
+                : '💡 Ketuk chart untuk minimize/maximize UI • Zoom untuk adjust tampilan • Tarik ujung garis merah'}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Alert Modal */}
+      <AnimatePresence>
+        {showAlert && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAlert(false)}
+              className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            >
+              {/* Alert Bubble */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden"
+              >
+                {/* Header with gradient */}
+                <div className="bg-red-600 px-6 py-4">
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <span className="text-2xl">⚠️</span>
+                    {alertMessage.title}
+                  </h3>
+                </div>
+                
+                {/* Content */}
+                <div className="px-6 py-6">
+                  <p className="text-ink-700 text-base leading-relaxed">
+                    {alertMessage.message}
+                  </p>
+                </div>
+                
+                {/* Footer with button */}
+                <div className="px-6 pb-6">
+                  <button
+                    onClick={() => setShowAlert(false)}
+                    className="w-full px-6 py-3 bg-primary-700 hover:primary-800 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Mengerti
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
     </LearningLayout>
   )
 }

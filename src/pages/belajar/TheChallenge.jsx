@@ -228,7 +228,7 @@ INSTRUKSI:
           </p>
 
           <Link
-            to="/kegiatan-belajar/the-challenge/guiding-resource"
+            to="/kegiatan-belajar/the-challenge/guiding-resource-level-1"
             className="inline-flex items-center gap-3 px-8 py-4 bg-white text-green-700 rounded-lg font-poppins font-semibold text-lg transition-all hover:shadow-xl hover:scale-105"
           >
             Lanjut ke Guiding Resource

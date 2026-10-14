@@ -18,7 +18,10 @@ import TP from './pages/belajar/TP'
 import BigIdeaEQ from './pages/belajar/BigIdeaEQ'
 import ForumDiskusi from './pages/belajar/ForumDiskusi'
 import TheChallenge from './pages/belajar/TheChallenge'
-import GuidingResource from './pages/belajar/GuidingResource'
+import GuidingResourceLevel1 from './pages/belajar/GuidingResourceLevel1'
+import GuidingResourceLevel2 from './pages/belajar/GuidingResourceLevel2'
+import GuidingResourceLevel3 from './pages/belajar/GuidingResourceLevel3'
+import GuidingResourceLevel4 from './pages/belajar/GuidingResourceLevel4'
 import TransisiAktivitas from './pages/belajar/TransisiAktivitas'
 import GuidingActivity from './pages/belajar/GuidingActivity'
 import HasilGuidingActivities from './pages/belajar/HasilGuidingActivities'
@@ -51,7 +54,10 @@ const router = createBrowserRouter([
       { path: 'kegiatan-belajar/big-idea', element: <ProtectedRoute><BigIdeaEQ /></ProtectedRoute> },
       { path: 'kegiatan-belajar/big-idea/forum-diskusi', element: <ProtectedRoute><ForumDiskusi /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge', element: <ProtectedRoute><TheChallenge /></ProtectedRoute> },
-      { path: 'kegiatan-belajar/the-challenge/guiding-resource', element: <ProtectedRoute><GuidingResource /></ProtectedRoute> },
+      { path: 'kegiatan-belajar/the-challenge/guiding-resource-level-1', element: <ProtectedRoute><GuidingResourceLevel1 /></ProtectedRoute> },
+      { path: 'kegiatan-belajar/the-challenge/guiding-resource-level-2', element: <ProtectedRoute><GuidingResourceLevel2 /></ProtectedRoute> },
+      { path: 'kegiatan-belajar/the-challenge/guiding-resource-level-3', element: <ProtectedRoute><GuidingResourceLevel3 /></ProtectedRoute> },
+      { path: 'kegiatan-belajar/the-challenge/guiding-resource-level-4', element: <ProtectedRoute><GuidingResourceLevel4 /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/transisi-aktivitas', element: <ProtectedRoute><TransisiAktivitas /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/guiding-activities', element: <ProtectedRoute><GuidingActivity /></ProtectedRoute> },
       { path: 'kegiatan-belajar/the-challenge/hasil-guiding-activities', element: <ProtectedRoute><HasilGuidingActivities /></ProtectedRoute> },
