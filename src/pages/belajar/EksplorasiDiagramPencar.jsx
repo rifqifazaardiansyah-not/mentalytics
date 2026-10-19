@@ -1462,7 +1462,7 @@ export default function EksplorasiDiagramPencar() {
               {(currentStep === 2 || currentStep === 3) && (
                 <button
                   onClick={() => setIsMobileChartFullscreen(true)}
-                  className="mt-4 lg:hidden w-full px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                  className="mt-4 lg:hidden w-full px-4 py-3 bg-primary-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                 >
                   <Maximize2 className="w-5 h-5" />
                   {currentStep === 2 ? 'Perbesar Diagram' : 'Perbesar'}
@@ -1522,7 +1522,7 @@ export default function EksplorasiDiagramPencar() {
                 opacity: isUIVisible ? 1 : 0
               }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-3 flex items-center justify-between shadow-lg"
+              className="absolute top-0 left-0 right-0 z-10 bg-primary-700 text-white px-4 py-3 flex items-center justify-between shadow-lg"
               style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
               onClick={(e) => e.stopPropagation()}
             >

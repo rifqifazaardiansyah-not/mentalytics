@@ -701,6 +701,36 @@ export default function GuidingQuestion() {
                   <p className="text-ink-700 mb-4">
                     Seberapa kuat korelasi tersebut, Hitung berdasarkan informasi yang diberikan! Dan apakah ada outlier?
                   </p>
+
+                    <div className="bg-white rounded-lg p-5 border border-orange-200
+                      w-full min-w-0 overflow-x-auto">
+                    <div className="flex items-center justify-center gap-3
+                      font-mono text-sm sm:text-base text-ink-700
+                      min-w-max sm:min-w-0">
+
+                    {/* Simbol r = */}
+                    <span className="shrink-0">r =</span>
+
+                    {/* Pecahan */}
+                    <div className="flex flex-col items-center text-center shrink-0">
+
+                      {/* Pembilang */}
+                      <div className="whitespace-nowrap px-3 pb-2">
+                        n·Σxy − (Σx)(Σy)
+                      </div>
+
+                      {/* Garis pecahan */}
+                      <div className="w-full border-t-2 border-gray-700" />
+
+                      {/* Penyebut */}
+                        <div className="whitespace-nowrap px-3 pt-2">
+                          √&#123;[n·Σx² − (Σx)²] · [n·Σy² − (Σy)²]&#125;
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+
                     <ol className="text-ink-700 mb-4 list-decimal pl-6">
                       <li>n = banyak pasangan data</li>
                       <li>x = variabel independen</li>

@@ -140,7 +140,7 @@ export default function AboutUs() {
               <div className="space-y-4 text-lg text-ink-600 leading-relaxed">
                 <p>
                   <span className="font-semibold text-primary-700">Mentalytics</span> adalah platform pembelajaran interaktif 
-                  berbasis <span className="font-semibold">Challenge Based Learning (CBL)</span> yang dirancang khusus untuk 
+                  berbasis <span className="font-semibold">Challenge Based on Deep Learning (CBDL)</span> yang dirancang khusus untuk 
                   siswa SMA Fase E. Kami menggabungkan pembelajaran statistika dengan isu kesehatan mental dan anti-bullying.
                 </p>
                 <p>
