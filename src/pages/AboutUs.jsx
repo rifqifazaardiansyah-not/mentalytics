@@ -58,7 +58,7 @@ export default function AboutUs() {
     },
     {
       icon: GraduationCap,
-      title: 'Literasi Data',
+      title: 'Literasi Statistik',
       description: 'Meningkatkan kemampuan siswa dalam menganalisis data dan membuat keputusan berbasis bukti',
       color: 'bg-primary-500',
     },
@@ -90,7 +90,7 @@ export default function AboutUs() {
             </h1>
             <p className="text-xl text-ink-600 max-w-3xl mx-auto leading-relaxed">
               Tim mahasiswa lintas program studi yang bersemangat mengembangkan platform pembelajaran 
-              inovatif untuk kesehatan mental dan literasi data
+              inovatif untuk kesehatan mental dan literasi statistik
             </p>
           </motion.div>
         </div>
@@ -150,7 +150,7 @@ export default function AboutUs() {
                 </p>
                 <p>
                   Dengan bantuan <span className="font-semibold">AI sebagai mitra berpikir</span> (bukan pemberi jawaban instan), 
-                  siswa dibimbing untuk mengembangkan kemampuan berpikir kritis, literasi data, dan empati terhadap isu kesehatan mental.
+                  siswa dibimbing untuk mengembangkan kemampuan berpikir kritis, literasi statistik, dan empati terhadap isu kesehatan mental.
                 </p>
               </div>
             </div>
@@ -331,7 +331,7 @@ export default function AboutUs() {
             </h2>
             <p className="text-lg text-ink-600 leading-relaxed max-w-2xl mx-auto">
               Dikembangkan sebagai prototype pembelajaran interaktif untuk mendukung 
-              pendidikan kesehatan mental dan literasi data di sekolah. 
+              pendidikan kesehatan mental dan literasi statistik di sekolah. 
               Kami berharap platform ini dapat memberikan kontribusi positif untuk dunia pendidikan.
             </p>
           </motion.div>
