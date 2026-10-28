@@ -36,15 +36,14 @@ export default function GuidingActivity() {
     if (!studentId || draftLoaded) return
 
     try {
-      const savedSurvey = localStorage.getItem(DRAFT_KEY_SURVEY)
+      // DON'T load savedSurvey - always start from intro
+      // const savedSurvey = localStorage.getItem(DRAFT_KEY_SURVEY)
       const savedIdentity = localStorage.getItem(DRAFT_KEY_IDENTITY)
       const savedBullying = localStorage.getItem(DRAFT_KEY_BULLYING)
       const savedAnxiety = localStorage.getItem(DRAFT_KEY_ANXIETY)
 
-      if (savedSurvey) {
-        setCurrentSurvey(savedSurvey)
-        console.log('📄 Loaded draft survey state:', savedSurvey)
-      }
+      // Always start from intro, but load draft data
+      // User will see "Draft Tersimpan" notice and can continue
 
       if (savedIdentity) {
         const parsed = JSON.parse(savedIdentity)
@@ -69,7 +68,7 @@ export default function GuidingActivity() {
     } catch (err) {
       console.error('Error loading draft:', err)
     }
-  }, [studentId, draftLoaded, DRAFT_KEY_SURVEY, DRAFT_KEY_IDENTITY, DRAFT_KEY_BULLYING, DRAFT_KEY_ANXIETY])
+  }, [studentId, draftLoaded, DRAFT_KEY_IDENTITY, DRAFT_KEY_BULLYING, DRAFT_KEY_ANXIETY])
 
   // Auto-save identity to localStorage
   useEffect(() => {
@@ -101,19 +100,20 @@ export default function GuidingActivity() {
     }
   }, [anxietyAnswers, studentId, draftLoaded, DRAFT_KEY_ANXIETY])
 
-  // Auto-save current survey state
-  useEffect(() => {
-    if (!studentId || !draftLoaded) return
-    
-    if (currentSurvey !== 'intro') {
-      localStorage.setItem(DRAFT_KEY_SURVEY, currentSurvey)
-      console.log('💾 Auto-saved survey state:', currentSurvey)
-    }
-  }, [currentSurvey, studentId, draftLoaded, DRAFT_KEY_SURVEY])
+  // DON'T auto-save current survey state - always start from intro
+  // User will see draft notice at intro page if they have unfinished work
+  // useEffect(() => {
+  //   if (!studentId || !draftLoaded) return
+  //   if (currentSurvey !== 'intro') {
+  //     localStorage.setItem(DRAFT_KEY_SURVEY, currentSurvey)
+  //     console.log('💾 Auto-saved survey state:', currentSurvey)
+  //   }
+  // }, [currentSurvey, studentId, draftLoaded, DRAFT_KEY_SURVEY])
 
   // Clear draft after successful submission
   const clearDraft = () => {
-    localStorage.removeItem(DRAFT_KEY_SURVEY)
+    // Don't need to remove DRAFT_KEY_SURVEY since we don't save it anymore
+    // localStorage.removeItem(DRAFT_KEY_SURVEY)
     localStorage.removeItem(DRAFT_KEY_IDENTITY)
     localStorage.removeItem(DRAFT_KEY_BULLYING)
     localStorage.removeItem(DRAFT_KEY_ANXIETY)
