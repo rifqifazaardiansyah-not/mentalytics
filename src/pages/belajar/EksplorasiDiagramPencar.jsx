@@ -978,7 +978,7 @@ export default function EksplorasiDiagramPencar() {
             </span>
           </div>
 
-          {/* Skip Button - Only show if not completed */}
+          {/* Skip Button - Only show if not completed
           {currentStep < 4 && (
             <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 md:p-4 w-full md:max-w-2xl mx-auto">
               <div className="flex flex-col items-center gap-3">
@@ -1013,7 +1013,7 @@ export default function EksplorasiDiagramPencar() {
                 </button>
               </div>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Main Content - Chart BIGGER, Info Smaller */}
@@ -1297,40 +1297,6 @@ export default function EksplorasiDiagramPencar() {
                       className="bg-blue-600 h-2 rounded-full transition-all"
                       style={{ width: `${(placedPoints.length / surveyData.length) * 100}%` }}
                     ></div>
-                  </div>
-                </div>
-
-                {/* Zoom controls - mobile friendly */}
-                <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
-                  <span className="text-xs text-gray-700 font-medium">Zoom (Perlebar Grid)</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleZoomOut}
-                      disabled={visualZoomStep2 <= 0.5}
-                      className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                      aria-label="Zoom out"
-                    >
-                      <span className="text-lg font-bold text-gray-700">−</span>
-                    </button>
-                    <span className="text-sm font-medium text-gray-700 w-12 text-center">
-                      {(zoomLevel * 100).toFixed(0)}%
-                    </span>
-                    <button
-                      onClick={handleZoomIn}
-                      disabled={zoomLevel >= 3}
-                      className="w-8 h-8 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                      aria-label="Zoom in"
-                    >
-                      <span className="text-lg font-bold text-gray-700">+</span>
-                    </button>
-                    {zoomLevel !== 1 && (
-                      <button
-                        onClick={handleResetZoom}
-                        className="ml-2 px-3 py-1 text-xs rounded-md bg-primary-100 text-primary-700 hover:bg-primary-200"
-                      >
-                        Reset
-                      </button>
-                    )}
                   </div>
                 </div>
               </motion.div>
