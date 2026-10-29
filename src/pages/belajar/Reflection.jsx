@@ -209,7 +209,7 @@ export default function Reflection() {
 
         <div className="text-center mb-8">
           <h1 className="text-2xl md:text-3xl font-poppins font-semibold text-ink-900 mb-2">
-            Refleksi Pembelajaran
+            Reflections
           </h1>
           <p className="text-ink-600">
             Berikan tanda pada skala 1 (Sangat Tidak Setuju) sampai 5 (Sangat Setuju) sesuai dengan yang kamu rasakan.
