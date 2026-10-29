@@ -617,7 +617,7 @@ export default function EksplorasiDiagramPencar() {
       // Validation: X-axis HARUS bullying
       if (variable === 'anxiety') {
         setAlertMessage({
-          title: '❌ Sumbu X Harus Variabel Bullying!',
+          title: 'Sumbu X Harus Variabel Bullying!',
           message: 'Dalam diagram pencar, variabel independen (X) adalah Bullying, dan variabel dependen (Y) adalah Kecemasan.'
         })
         setShowAlert(true)
