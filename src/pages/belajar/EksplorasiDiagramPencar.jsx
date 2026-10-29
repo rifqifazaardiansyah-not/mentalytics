@@ -618,7 +618,7 @@ export default function EksplorasiDiagramPencar() {
       if (variable === 'anxiety') {
         setAlertMessage({
           title: 'Sumbu X Harus Variabel Bullying!',
-          message: 'Dalam diagram pencar, variabel independen (X) adalah Bullying, dan variabel dependen (Y) adalah Kecemasan.'
+          message: 'Dalam diagram pencar ini, variabel independen (X) adalah Bullying, dan variabel dependen (Y) adalah Kecemasan.'
         })
         setShowAlert(true)
         return // Reject selection
