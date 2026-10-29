@@ -21,7 +21,7 @@ export default function AboutUs() {
       name: 'Rifqi Faza Ardiansyah',
       program: 'Sistem Informasi',
       photo: '/assets/team/rifqi.jpg',
-      role: 'Web Developer & System Analyst',
+      role: 'Software Engineer',
     },
     {
       name: 'Nada Syifa Salsabila',

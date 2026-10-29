@@ -87,6 +87,9 @@ export default function EksplorasiDiagramPencar() {
   // Mobile fullscreen for chart only
   const [isMobileChartFullscreen, setIsMobileChartFullscreen] = useState(false)
   
+  // Desktop fullscreen for chart (same feature as mobile)
+  const [isDesktopChartFullscreen, setIsDesktopChartFullscreen] = useState(false)
+  
   // Highlighted grid lines when clicking axis numbers
   const [highlightedX, setHighlightedX] = useState(null)
   const [highlightedY, setHighlightedY] = useState(null)
@@ -1435,6 +1438,17 @@ export default function EksplorasiDiagramPencar() {
                 </button>
               )}
 
+              {/* Desktop: Button to open fullscreen chart (Step 2 & 3) */}
+              {(currentStep === 2 || currentStep === 3) && (
+                <button
+                  onClick={() => setIsDesktopChartFullscreen(true)}
+                  className="mt-4 hidden lg:flex w-full px-4 py-3 bg-primary-700 hover:bg-primary-800 text-white font-semibold rounded-xl transition-colors items-center justify-center gap-2"
+                >
+                  <Maximize2 className="w-5 h-5" />
+                  {currentStep === 2 ? 'Perbesar Diagram' : 'Perbesar Diagram'}
+                </button>
+              )}
+
               {currentStep === 3 && (
                 <p className="text-xs text-ink-500 mt-3 text-center">
                   💡 Tarik titik merah untuk mengatur garis regresi
@@ -1625,6 +1639,194 @@ export default function EksplorasiDiagramPencar() {
               {currentStep === 2 
                 ? '💡 Ketuk chart untuk minimize/maximize UI • Klik angka di sumbu untuk highlight garis'
                 : '💡 Ketuk chart untuk minimize/maximize UI • Zoom untuk adjust tampilan • Tarik ujung garis merah'}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Fullscreen Chart Modal (Step 2 & 3) */}
+      <AnimatePresence>
+        {isDesktopChartFullscreen && (currentStep === 2 || currentStep === 3) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-white hidden lg:block"
+            onClick={handleChartContainerClick}
+          >
+            {/* Chart Container - FULL SCREEN */}
+            <div 
+              className="absolute inset-0 overflow-auto"
+              style={{ touchAction: isDragging ? 'none' : 'auto' }}
+              onMouseMove={currentStep === 3 ? handleChartMouseMove : undefined}
+              onMouseUp={currentStep === 3 ? handleChartMouseUp : undefined}
+              onMouseLeave={currentStep === 3 ? handleChartMouseUp : undefined}
+              onTouchMove={currentStep === 3 ? handleChartTouchMove : undefined}
+              onTouchEnd={currentStep === 3 ? handleChartMouseUp : undefined}
+              onTouchCancel={currentStep === 3 ? handleChartMouseUp : undefined}
+            >
+              <div 
+                className="inline-block min-w-min"
+                style={{ 
+                  transform: `scale(${currentStep === 2 ? visualZoomStep2 : visualZoom})`,
+                  transformOrigin: 'center center',
+                  transition: 'transform 0.2s ease-out'
+                }}
+              >
+                {renderChartSVG()}
+              </div>
+            </div>
+
+            {/* Header - ABSOLUTE, ON TOP OF CHART */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : -200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute top-0 left-0 right-0 z-10 bg-primary-700 text-white px-6 py-4 flex items-center justify-between shadow-lg"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold">
+                  {currentStep === 2 ? '📊 Diagram Kartesius' : '📈 Atur Garis Regresi'}
+                </h2>
+                <p className="text-sm text-primary-100">
+                  {currentStep === 2 
+                    ? 'Klik chart untuk minimize/maximize UI • Klik angka di sumbu untuk highlight garis'
+                    : 'Klik chart untuk minimize/maximize UI • Tarik titik merah untuk mengatur garis'}
+                </p>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsDesktopChartFullscreen(false)
+                }}
+                className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-7 h-7" />
+              </button>
+            </motion.div>
+
+            {/* Current Data Info - ABSOLUTE, BELOW HEADER */}
+            {currentStep === 2 && currentDataIndex < surveyData.length && (
+              <motion.div 
+                initial={{ y: 0, opacity: 1 }}
+                animate={{ 
+                  y: isUIVisible ? 0 : -200,
+                  opacity: isUIVisible ? 1 : 0
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className="absolute top-[72px] left-0 right-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b-2 border-blue-200"
+                style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-4 max-w-5xl mx-auto">
+                  <div className="flex-1">
+                    <p className="text-sm text-ink-600 mb-2 font-semibold">
+                      Data Responden #{surveyData[currentDataIndex].no}
+                    </p>
+                    <div className="flex gap-6">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-blue-600 font-medium">Skor Bullying:</span>
+                        <span className="text-3xl font-bold text-blue-700">{surveyData[currentDataIndex].bullying}</span>
+                      </div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-orange-600 font-medium">Skor Kecemasan:</span>
+                        <span className="text-3xl font-bold text-orange-700">{surveyData[currentDataIndex].anxiety}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-white px-4 py-2 rounded-lg border-2 border-blue-300">
+                    <p className="text-xs text-ink-500 mb-1">Progress</p>
+                    <p className="text-lg font-bold text-blue-700">
+                      {placedPoints.length}/{surveyData.length}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Feedback Alert - ABSOLUTE, BELOW DATA INFO OR HEADER */}
+            {attemptFeedback && (
+              <motion.div 
+                initial={{ y: 0, opacity: 1 }}
+                animate={{ 
+                  y: isUIVisible ? 0 : -200,
+                  opacity: isUIVisible ? 1 : 0
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                className={`absolute ${currentStep === 2 ? 'top-[160px]' : 'top-[72px]'} left-0 right-0 z-10 px-6 py-3 text-center font-semibold text-lg ${
+                  attemptFeedback.type === 'success' 
+                    ? 'bg-green-100 text-green-800 border-b-2 border-green-400' 
+                    : 'bg-red-100 text-red-800 border-b-2 border-red-400'
+                }`}
+                style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {attemptFeedback.message}
+              </motion.div>
+            )}
+
+            {/* Zoom Controls - ABSOLUTE BOTTOM */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : 200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute bottom-12 left-0 right-0 z-10 bg-gray-50 px-6 py-4 border-t-2 border-gray-300 flex items-center justify-center gap-4"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={handleZoomOut}
+                disabled={currentStep === 2 ? visualZoomStep2 <= 0.5 : visualZoom <= 0.5}
+                className="w-14 h-14 rounded-full bg-white border-2 border-gray-400 hover:border-gray-500 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+              >
+                <span className="text-3xl font-bold text-gray-700">−</span>
+              </button>
+              <span className="text-xl font-bold text-gray-700 min-w-[80px] text-center">
+                {currentStep === 2 
+                  ? `${(visualZoomStep2 * 100).toFixed(0)}%`
+                  : `${(visualZoom * 100).toFixed(0)}%`}
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={currentStep === 2 ? visualZoomStep2 >= 3 : visualZoom >= 2}
+                className="w-14 h-14 rounded-full bg-white border-2 border-gray-400 hover:border-gray-500 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
+              >
+                <span className="text-3xl font-bold text-gray-700">+</span>
+              </button>
+              {((currentStep === 2 && visualZoomStep2 !== 1) || (currentStep === 3 && visualZoom !== 1)) && (
+                <button
+                  onClick={handleResetZoom}
+                  className="px-6 py-3 text-base rounded-lg bg-primary-600 text-white hover:bg-primary-700 font-semibold shadow-md hover:shadow-lg transition-all"
+                >
+                  Reset Zoom
+                </button>
+              )}
+            </motion.div>
+
+            {/* Hint - ABSOLUTE BOTTOM */}
+            <motion.div 
+              initial={{ y: 0, opacity: 1 }}
+              animate={{ 
+                y: isUIVisible ? 0 : 200,
+                opacity: isUIVisible ? 1 : 0
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="absolute bottom-0 left-0 right-0 z-10 bg-blue-50 px-6 py-3 text-center text-sm text-blue-800 border-t border-blue-200"
+              style={{ pointerEvents: isUIVisible ? 'auto' : 'none' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {currentStep === 2 
+                ? '💡 Klik chart untuk minimize/maximize UI • Klik angka di sumbu untuk highlight garis grid • Zoom untuk memperbesar tampilan'
+                : '💡 Klik chart untuk minimize/maximize UI • Gunakan zoom untuk mempermudah pengaturan • Tarik titik merah di ujung garis'}
             </motion.div>
           </motion.div>
         )}
