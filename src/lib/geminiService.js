@@ -108,17 +108,34 @@ function postProcessResponse(text) {
   cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Single-level braces
   cleaned = cleaned.replace(/\{([^{}]*)\}/g, '$1')  // Run twice for nested braces
   
-  // 13. Fix missing spaces (words stuck together)
+  // 13. Fix missing spaces (words stuck together) - ENHANCED VERSION
+  
   // Pattern 1: lowercase+uppercase (e.g., "Wajarbanget" → "Wajar banget")
   cleaned = cleaned.replace(/([a-z])([A-Z])/g, '$1 $2')
   
-  // Pattern 2: Generic Indonesian word boundaries (COMPREHENSIVE FIX)
-  // Common Indonesian words that should have space before them
+  // Pattern 2: COMPREHENSIVE Indonesian word boundaries
+  // Extended list of common Indonesian words that should have space before/after them
   const indonesianWords = [
+    // Common words (original)
     'banget', 'tidak', 'dengan', 'untuk', 'yang', 'dari', 'oleh', 'pada',
     'dalam', 'perlu', 'lagi', 'bisa', 'harus', 'akan', 'sudah', 'belum',
     'sedang', 'dapat', 'sangat', 'juga', 'saja', 'lebih', 'sekali',
-    'beban', 'cari', 'wali', 'cara', 'soal', 'apa', 'siapa', 'mana'
+    'beban', 'cari', 'wali', 'cara', 'soal', 'apa', 'siapa', 'mana',
+    // Additional words (extended)
+    'kamu', 'aku', 'mereka', 'kami', 'kita', 'dia', 'ini', 'itu',
+    'buat', 'punya', 'sama', 'tapi', 'kalau', 'jika', 'karena', 'sebab',
+    'maka', 'atau', 'tetapi', 'namun', 'lalu', 'kemudian', 'setelah',
+    'sebelum', 'saat', 'waktu', 'kali', 'masih', 'pernah', 'selalu',
+    'kadang', 'sering', 'jarang', 'paling', 'kurang', 'cukup', 'terlalu',
+    'semua', 'beberapa', 'banyak', 'sedikit', 'setiap', 'tiap', 'masing',
+    'sendiri', 'bersama', 'bareng', 'aja', 'kok', 'dong', 'deh', 'sih',
+    'yuk', 'dulu', 'nanti', 'sekarang', 'tadi', 'besok', 'kemarin',
+    // Mental health related
+    'cemas', 'stres', 'capek', 'lelah', 'takut', 'khawatir', 'senang',
+    'sedih', 'marah', 'kesal', 'frustasi', 'panik', 'tenang', 'nyaman',
+    // Action words
+    'bicara', 'cerita', 'tanya', 'jawab', 'coba', 'lihat', 'perhatikan',
+    'ingat', 'lupa', 'paham', 'mengerti', 'ngerti', 'bingung', 'jelas'
   ]
   
   // Add space before these words if they're stuck to another word
@@ -135,18 +152,57 @@ function postProcessResponse(text) {
     cleaned = cleaned.replace(regex, '$1 $2')
   })
   
-  // Pattern 3: word+punctuation+word without space (e.g., "ini,tapi" → "ini, tapi")
+  // Pattern 3: Fix words stuck to emojis (NEW!)
+  // "word👋" → "word 👋" or "word😊" → "word 😊"
+  cleaned = cleaned.replace(/([a-zA-Z])([\p{Emoji}])/gu, '$1 $2')
+  cleaned = cleaned.replace(/([\p{Emoji}])([a-zA-Z])/gu, '$1 $2')
+  
+  // Pattern 4: Fix capitalized words stuck together (NEW!)
+  // "WajarBanget" → "Wajar Banget"
+  cleaned = cleaned.replace(/([A-Z][a-z]+)([A-Z][a-z])/g, '$1 $2')
+  
+  
+  // Pattern 5: word+punctuation+word without space (e.g., "ini,tapi" → "ini, tapi")
   cleaned = cleaned.replace(/([a-zA-Z])([,;:])([a-zA-Z])/g, '$1$2 $3')
   
-  // Pattern 4: punctuation+word without space (e.g., ",tapi" → ", tapi")
+  // Pattern 6: punctuation+word without space (e.g., ",tapi" → ", tapi")
   cleaned = cleaned.replace(/([,;:.!?])([a-zA-Z])/g, '$1 $2')
   
-  // Pattern 5: Fix quotes without spaces
+  // Pattern 7: Fix quotes without spaces (ENHANCED)
   cleaned = cleaned.replace(/([a-zA-Z])"([a-zA-Z])/g, '$1 "$2')
-  cleaned = cleaned.replace(/"([a-zA-Z])/g, '"$1')
+  cleaned = cleaned.replace(/"([a-zA-Z])/g, '" $1')
+  cleaned = cleaned.replace(/([a-zA-Z])"/g, '$1 "')
+  
+  // Pattern 8: Fix parentheses without spaces (NEW!)
+  cleaned = cleaned.replace(/([a-zA-Z])\(/g, '$1 (')
+  cleaned = cleaned.replace(/\)([a-zA-Z])/g, ') $1')
+  
+  // Pattern 9: Fix numbers stuck to words (NEW!)
+  // "3kali" → "3 kali", "skor25" → "skor 25"
+  cleaned = cleaned.replace(/([0-9])([a-zA-Z])/g, '$1 $2')
+  cleaned = cleaned.replace(/([a-zA-Z])([0-9])/g, '$1 $2')
   
   // Clean up excessive spaces from above replacements
   cleaned = cleaned.replace(/\s{2,}/g, ' ')
+  
+  // Pattern 10: Fix common Indonesian compound words that should be separated
+  // "tidakbisa" → "tidak bisa", "sudahpaham" → "sudah paham"
+  const commonPhrases = [
+    { pattern: /tidakbisa/gi, replacement: 'tidak bisa' },
+    { pattern: /tidakada/gi, replacement: 'tidak ada' },
+    { pattern: /sudahpaham/gi, replacement: 'sudah paham' },
+    { pattern: /belumpaham/gi, replacement: 'belum paham' },
+    { pattern: /bisakah/gi, replacement: 'bisa kah' },
+    { pattern: /apakah/gi, replacement: 'apa kah' },
+    { pattern: /bagaimana/gi, replacement: 'bagaimana' }, // Keep as is
+    { pattern: /gimana/gi, replacement: 'gimana' }, // Keep as is
+    { pattern: /kenapa/gi, replacement: 'kenapa' }, // Keep as is
+    { pattern: /mengapa/gi, replacement: 'mengapa' } // Keep as is
+  ]
+  
+  commonPhrases.forEach(({ pattern, replacement }) => {
+    cleaned = cleaned.replace(pattern, replacement)
+  })
   
   // 14. Fix bullet points without line breaks
   // Ensure bullet points are on new lines
