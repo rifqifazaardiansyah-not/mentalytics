@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import MiloCharacter from '../components/milo/MiloCharacter'
-import AnnouncementModal from '../components/AnnouncementModal'
 import { ArrowRight, Brain, BarChart3, Users, Sparkles, Heart, Target, BookOpen, FileText, Lightbulb } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -48,9 +47,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Announcement Modal */}
-      <AnnouncementModal />
-      
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-white">
         {/* Colorful blurs in background */}
