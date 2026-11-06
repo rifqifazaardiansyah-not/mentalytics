@@ -448,7 +448,7 @@ Data lengkap: ${JSON.stringify(classSurveyData.rawData)}]`
                         {msg.content}
                       </p>
                     ) : (
-                      <div className="text-sm prose prose-sm max-w-none prose-p:my-2 prose-strong:text-primary-700 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
+                      <div className="text-sm prose prose-sm max-w-none prose-p:my-2 prose-strong:text-primary-700 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
                         <ReactMarkdown>{msg.content}</ReactMarkdown>
                       </div>
                     )}
@@ -472,7 +472,7 @@ Data lengkap: ${JSON.stringify(classSurveyData.rawData)}]`
                     <Sparkles className="w-4 h-4 text-white" />
                   </div>
                   <div className="max-w-[75%] p-3 rounded-2xl bg-white text-ink-900 shadow-md rounded-tl-sm border border-primary-300">
-                    <div className="text-sm prose prose-sm max-w-none prose-p:my-2 prose-strong:text-primary-700 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
+                    <div className="text-sm prose prose-sm max-w-none prose-p:my-2 prose-strong:text-primary-700 prose-strong:font-semibold prose-ul:my-2 prose-ol:my-2 prose-li:my-1" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
                       <ReactMarkdown>{streamingMessage}</ReactMarkdown>
                       <span className="inline-block w-1 h-4 bg-primary-600 ml-1 animate-pulse"></span>
                     </div>
