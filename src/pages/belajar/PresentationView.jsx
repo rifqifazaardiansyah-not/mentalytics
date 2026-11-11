@@ -73,37 +73,15 @@ export default function PresentationView() {
         const xScaleMax = parsedDiagram.xScale || 200
         const yScaleMax = parsedDiagram.yScale || 100
 
-        // Convert regression line from SVG coordinates {x1, y1, x2, y2} to data points {point1: {x, y}, point2: {x, y}}
-        let convertedRegressionLine = { point1: null, point2: null }
-        if (parsedDiagram.regressionLine && parsedDiagram.regressionLine.x1) {
-          // Use chart dimensions from EksplorasiDiagramPencar
-          const chartWidth = 600
-          const chartHeight = 600
-          const padding = 60
-          
-          // Convert SVG coords back to data values
-          const coordToValue = (coord, max, dimension) => {
-            return ((coord - padding) / (dimension - 2 * padding)) * max
-          }
-          
-          const rl = parsedDiagram.regressionLine
-          convertedRegressionLine = {
-            point1: {
-              x: coordToValue(rl.x1, xScaleMax, chartWidth),
-              y: yScaleMax - coordToValue(rl.y1, yScaleMax, chartHeight) // Invert Y
-            },
-            point2: {
-              x: coordToValue(rl.x2, xScaleMax, chartWidth),
-              y: yScaleMax - coordToValue(rl.y2, yScaleMax, chartHeight) // Invert Y
-            }
-          }
-        }
+        // Use regression line directly from database (already in SVG coordinates)
+        // No need to convert - it's saved and loaded as-is
+        const convertedRegressionLine = parsedDiagram.regressionLine || { x1: null, y1: null, x2: null, y2: null }
 
         setData({
           variableX: parsedDiagram.xAxisVar || 'bullying',
           variableY: parsedDiagram.yAxisVar || 'anxiety',
           inputtedPoints: parsedDiagram.inputtedPoints || [],
-          regressionLine: convertedRegressionLine,
+          regressionLine: convertedRegressionLine,  // Use SVG coords directly
           correlationScore: parsedDiagram.correlationScore || null,
           scaleX: { min: 0, max: xScaleMax },
           scaleY: { min: 0, max: yScaleMax },
@@ -114,7 +92,8 @@ export default function PresentationView() {
 
         console.log('✅ Presentation data loaded:', {
           correlationScore: parsedDiagram.correlationScore,
-          hasRegressionLine: !!convertedRegressionLine.point1,
+          hasRegressionLine: !!(convertedRegressionLine.x1 !== null),
+          regressionLine: convertedRegressionLine,
           pointsCount: parsedDiagram.inputtedPoints?.length || 0
         })
 
@@ -128,9 +107,9 @@ export default function PresentationView() {
     loadData()
   }, [navigate])
 
-  // SVG dimensions
+  // SVG dimensions - MUST MATCH EksplorasiDiagramPencar for accurate regression line
   const width = 600
-  const height = 400
+  const height = 600  // CRITICAL: Must be 600 to match saved data from EksplorasiDiagramPencar
   const padding = 60
 
   // Scale functions (match EksplorasiDiagramPencar)
@@ -333,13 +312,13 @@ export default function PresentationView() {
                 </>
               )}
 
-              {/* Regression line */}
-              {data.regressionLine.point1 && data.regressionLine.point2 && (
+              {/* Regression line - use SVG coordinates directly from database */}
+              {data.regressionLine && data.regressionLine.x1 !== null && data.regressionLine.x1 !== undefined && (
                 <line
-                  x1={scaleXFunc(data.regressionLine.point1.x)}
-                  y1={scaleYFunc(data.regressionLine.point1.y)}
-                  x2={scaleXFunc(data.regressionLine.point2.x)}
-                  y2={scaleYFunc(data.regressionLine.point2.y)}
+                  x1={data.regressionLine.x1}
+                  y1={data.regressionLine.y1}
+                  x2={data.regressionLine.x2}
+                  y2={data.regressionLine.y2}
                   stroke="#dc2626"
                   strokeWidth="3"
                   strokeDasharray="8,4"
