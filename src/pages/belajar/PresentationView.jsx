@@ -296,7 +296,7 @@ export default function PresentationView() {
                     <text
                       key={`x-${val}`}
                       x={scaleXFunc(val)}
-                      y={height - padding + 50}  // Adjusted from 20 to 50
+                      y={height - padding + 100}  // Adjusted from 20 to 50
                       textAnchor="middle"
                       fontSize="28"  // Increased from 11 to 28
                       fill="#374151"
@@ -307,7 +307,7 @@ export default function PresentationView() {
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleY.max / 5)).map((val) => (
                     <text
                       key={`y-${val}`}
-                      x={padding - 50}  // Adjusted from 20 to 50
+                      x={padding - 100}  // Adjusted from 20 to 50
                       y={scaleYFunc(val) + 10}  // Adjusted from 4 to 10
                       textAnchor="middle"
                       fontSize="28"  // Increased from 11 to 28
