@@ -282,7 +282,7 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={20}
+                  x={40}
                   y={chartHeight / 2}
                   textAnchor="middle"
                   fontSize="36"
