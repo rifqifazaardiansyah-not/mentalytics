@@ -375,7 +375,7 @@ export default function ClassEntry() {
           <form onSubmit={handleCreateClass} className="space-y-5">
             <div>
               <label htmlFor="namaKelas" className="block text-sm font-medium text-ink-700 mb-2">
-                Nama Kelas
+                Nama Sekolah / Kelas
               </label>
               <input
                 type="text"
