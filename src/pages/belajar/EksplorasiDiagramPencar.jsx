@@ -171,6 +171,8 @@ export default function EksplorasiDiagramPencar() {
         console.error('Error saving progress to DB:', error)
       } else {
         console.log('✅ Progress saved to database')
+        console.log('📊 Saved regression line:', regressionLine)
+        console.log('📊 Saved correlation:', correlationScore)
       }
     } catch (e) {
       console.error('Error in saveProgressToDB:', e)

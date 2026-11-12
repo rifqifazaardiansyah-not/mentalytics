@@ -94,7 +94,9 @@ export default function PresentationView() {
           correlationScore: parsedDiagram.correlationScore,
           hasRegressionLine: !!(convertedRegressionLine.x1 !== null),
           regressionLine: convertedRegressionLine,
-          pointsCount: parsedDiagram.inputtedPoints?.length || 0
+          regressionLineRaw: parsedDiagram.regressionLine,
+          pointsCount: parsedDiagram.inputtedPoints?.length || 0,
+          scales: { xScale: xScaleMax, yScale: yScaleMax }
         })
 
       } catch (err) {
@@ -107,10 +109,10 @@ export default function PresentationView() {
     loadData()
   }, [navigate])
 
-  // SVG dimensions - MUST MATCH EksplorasiDiagramPencar for accurate regression line
-  const width = 600
-  const height = 600  // CRITICAL: Must be 600 to match saved data from EksplorasiDiagramPencar
-  const padding = 60
+  // SVG dimensions - MUST EXACTLY MATCH EksplorasiDiagramPencar
+  const width = 1600   // CRITICAL: Must match baseChartWidth in EksplorasiDiagramPencar
+  const height = 1200  // CRITICAL: Must match baseChartHeight in EksplorasiDiagramPencar
+  const padding = 80   // CRITICAL: Must match padding in EksplorasiDiagramPencar
 
   // Scale functions (match EksplorasiDiagramPencar)
   const scaleXFunc = (value) => {
