@@ -109,18 +109,23 @@ export default function PresentationView() {
     loadData()
   }, [navigate])
 
-  // SVG dimensions - MUST EXACTLY MATCH EksplorasiDiagramPencar
-  const width = 1600   // CRITICAL: Must match baseChartWidth in EksplorasiDiagramPencar
-  const height = 1200  // CRITICAL: Must match baseChartHeight in EksplorasiDiagramPencar
-  const padding = 80   // CRITICAL: Must match padding in EksplorasiDiagramPencar
+  // SVG dimensions - EXPANDED viewBox to accommodate labels outside chart area
+  const chartWidth = 1600   // Inner chart area width
+  const chartHeight = 1200  // Inner chart area height
+  const padding = 80        // Padding for chart area
+  const labelPadding = 100  // Extra space for axis labels
+  
+  // Total viewBox dimensions (chart + label space)
+  const width = chartWidth
+  const height = chartHeight + labelPadding  // Add space at bottom for X-axis label
 
-  // Scale functions (match EksplorasiDiagramPencar)
+  // Scale functions (match EksplorasiDiagramPencar - use chartWidth/chartHeight)
   const scaleXFunc = (value) => {
-    return padding + (value / data.scaleX.max) * (width - 2 * padding)
+    return padding + (value / data.scaleX.max) * (chartWidth - 2 * padding)
   }
 
   const scaleYFunc = (value) => {
-    return height - padding - (value / data.scaleY.max) * (height - 2 * padding)
+    return chartHeight - padding - (value / data.scaleY.max) * (chartHeight - 2 * padding)
   }
 
   // Determine correlation direction (correct threshold: |r| <= 0.19 for no correlation)
@@ -196,8 +201,8 @@ export default function PresentationView() {
                 className="bg-white rounded-lg shadow-sm w-full h-auto"
                 preserveAspectRatio="xMidYMid meet"
                 style={{ 
-                  aspectRatio: '4 / 3',
-                  maxHeight: '500px'
+                  aspectRatio: `${width} / ${height}`,
+                  maxHeight: '600px'
                 }}
               >
               {/* Grid lines - lighter and dashed */}
@@ -209,10 +214,10 @@ export default function PresentationView() {
                         x1={scaleXFunc(val)}
                         y1={padding}
                         x2={scaleXFunc(val)}
-                        y2={height - padding}
+                        y2={chartHeight - padding}
                         stroke="#e5e7eb"
-                        strokeWidth="2"  // Increased from 1 to 2
-                        strokeDasharray="10 5"  // Increased from 4,2
+                        strokeWidth="2"
+                        strokeDasharray="10 5"
                       />
                     </g>
                   ))}
@@ -221,11 +226,11 @@ export default function PresentationView() {
                       <line
                         x1={padding}
                         y1={scaleYFunc(data.scaleY.max - val)}
-                        x2={width - padding}
+                        x2={chartWidth - padding}
                         y2={scaleYFunc(data.scaleY.max - val)}
                         stroke="#e5e7eb"
-                        strokeWidth="2"  // Increased from 1 to 2
-                        strokeDasharray="10 5"  // Increased from 4,2
+                        strokeWidth="2"
+                        strokeDasharray="10 5"
                       />
                     </g>
                   ))}
@@ -235,26 +240,26 @@ export default function PresentationView() {
               {/* X-axis line */}
               <line
                 x1={padding}
-                y1={height - padding}
-                x2={width - padding - 40}  // Increased from 15 to 40
-                y2={height - padding}
+                y1={chartHeight - padding}
+                x2={chartWidth - padding - 40}
+                y2={chartHeight - padding}
                 stroke="#1f2937"
-                strokeWidth="8"  // Increased from 3 to 8
+                strokeWidth="8"
               />
               {/* X-axis arrow → */}
               <polygon
-                points={`${width - padding - 40},${height - padding - 15} ${width - padding},${height - padding} ${width - padding - 40},${height - padding + 15}`}
+                points={`${chartWidth - padding - 40},${chartHeight - padding - 15} ${chartWidth - padding},${chartHeight - padding} ${chartWidth - padding - 40},${chartHeight - padding + 15}`}
                 fill="#1f2937"
               />
               
               {/* Y-axis line */}
               <line
                 x1={padding}
-                y1={height - padding}
+                y1={chartHeight - padding}
                 x2={padding}
-                y2={padding + 40}  // Increased from 15 to 40
+                y2={padding + 40}
                 stroke="#1f2937"
-                strokeWidth="8"  // Increased from 3 to 8
+                strokeWidth="8"
               />
               {/* Y-axis arrow ↑ */}
               <polygon
@@ -262,11 +267,11 @@ export default function PresentationView() {
                 fill="#1f2937"
               />
 
-              {/* Axis labels - positioned FAR from scale numbers */}
+              {/* Axis labels - positioned FAR from scale numbers with extra space */}
               {data.variableX && data.scaleX.max > 0 && (
                 <text
-                  x={width / 2}
-                  y={height - padding + 95}
+                  x={chartWidth / 2}
+                  y={chartHeight + 60}
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
@@ -277,13 +282,13 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={25}
-                  y={height / 2}
+                  x={20}
+                  y={chartHeight / 2}
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 25, ${height / 2})`}
+                  transform={`rotate(-90, 20, ${chartHeight / 2})`}
                 >
                   {data.variableY === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'} (0-{data.scaleY.max})
                 </text>
@@ -296,7 +301,7 @@ export default function PresentationView() {
                     <text
                       key={`x-${val}`}
                       x={scaleXFunc(val)}
-                      y={height - padding + 50}
+                      y={chartHeight - padding + 50}
                       textAnchor="middle"
                       fontSize="28"
                       fill="#374151"
