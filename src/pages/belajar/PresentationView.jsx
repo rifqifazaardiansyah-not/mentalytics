@@ -262,11 +262,11 @@ export default function PresentationView() {
                 fill="#1f2937"
               />
 
-              {/* Axis labels */}
+              {/* Axis labels - positioned FAR from scale numbers */}
               {data.variableX && data.scaleX.max > 0 && (
                 <text
                   x={width / 2}
-                  y={height - 25}
+                  y={height - padding + 95}
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
@@ -277,13 +277,13 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={50}
+                  x={25}
                   y={height / 2}
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 50, ${height / 2})`}
+                  transform={`rotate(-90, 25, ${height / 2})`}
                 >
                   {data.variableY === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'} (0-{data.scaleY.max})
                 </text>
