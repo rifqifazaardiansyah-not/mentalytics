@@ -190,11 +190,16 @@ export default function PresentationView() {
 
           {/* SVG Diagram */}
           <div className="flex justify-center mb-6 bg-gray-50 rounded-xl p-4 md:p-6">
-            <svg
-              viewBox={`0 0 ${width} ${height}`}
-              className="bg-white rounded-lg shadow-sm w-full h-auto"
-              style={{ maxWidth: '600px' }}
-            >
+            <div className="w-full max-w-3xl">
+              <svg
+                viewBox={`0 0 ${width} ${height}`}
+                className="bg-white rounded-lg shadow-sm w-full h-auto"
+                preserveAspectRatio="xMidYMid meet"
+                style={{ 
+                  aspectRatio: '4 / 3',  // Force 4:3 aspect ratio to match 1600x1200
+                  maxHeight: '500px'      // Prevent too tall on mobile
+                }}
+              >
               {/* Grid lines - lighter and dashed */}
               {data.scaleX.max > 0 && data.scaleY.max > 0 && (
                 <>
@@ -340,6 +345,7 @@ export default function PresentationView() {
                 />
               ))}
             </svg>
+            </div>
           </div>
 
           {/* Correlation Info */}
