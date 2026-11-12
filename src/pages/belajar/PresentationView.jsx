@@ -266,7 +266,7 @@ export default function PresentationView() {
               {data.variableX && data.scaleX.max > 0 && (
                 <text
                   x={width / 2}
-                  y={height - 15}  // Bottom label - positioned ABOVE scale numbers (which are at height-padding+50)
+                  y={height - padding + 85}  // Below the scale numbers
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
@@ -277,13 +277,13 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={30}  // Left label - positioned LEFT of scale numbers (which are at padding-50)
+                  x={15}  // Far left edge, clear of everything
                   y={height / 2}
                   textAnchor="middle"
                   fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 30, ${height / 2})`}
+                  transform={`rotate(-90, 15, ${height / 2})`}
                 >
                   {data.variableY === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'} (0-{data.scaleY.max})
                 </text>
@@ -292,25 +292,27 @@ export default function PresentationView() {
               {/* Scale labels */}
               {data.scaleX.max > 0 && data.scaleY.max > 0 && (
                 <>
+                  {/* X-axis scale numbers (below the axis) */}
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleX.max / 5)).map((val) => (
                     <text
                       key={`x-${val}`}
                       x={scaleXFunc(val)}
-                      y={height - padding + 50}  // Adjusted from 20 to 50
+                      y={height - 20}  // Close to bottom, above the X-axis label
                       textAnchor="middle"
-                      fontSize="28"  // Increased from 11 to 28
+                      fontSize="28"
                       fill="#374151"
                     >
                       {Math.round(val)}
                     </text>
                   ))}
+                  {/* Y-axis scale numbers (left of the axis) */}
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleY.max / 5)).map((val) => (
                     <text
                       key={`y-${val}`}
-                      x={padding - 50}  // Adjusted from 20 to 50
-                      y={scaleYFunc(val) + 10}  // Adjusted from 4 to 10
-                      textAnchor="middle"
-                      fontSize="28"  // Increased from 11 to 28
+                      x={padding + 35}  // Position inside the chart area (right of Y-axis line)
+                      y={scaleYFunc(val) + 10}
+                      textAnchor="start"  // Changed from middle to start (left-align)
+                      fontSize="28"
                       fill="#374151"
                     >
                       {Math.round(val)}
