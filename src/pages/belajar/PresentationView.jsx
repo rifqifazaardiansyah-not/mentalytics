@@ -196,8 +196,8 @@ export default function PresentationView() {
                 className="bg-white rounded-lg shadow-sm w-full h-auto"
                 preserveAspectRatio="xMidYMid meet"
                 style={{ 
-                  aspectRatio: '4 / 3',  // Force 4:3 aspect ratio to match 1600x1200
-                  maxHeight: '500px'      // Prevent too tall on mobile
+                  aspectRatio: '4 / 3',
+                  maxHeight: '500px'
                 }}
               >
               {/* Grid lines - lighter and dashed */}
@@ -262,13 +262,13 @@ export default function PresentationView() {
                 fill="#1f2937"
               />
 
-              {/* Axis labels - OUTER LAYER (closest to edge) */}
+              {/* Axis labels */}
               {data.variableX && data.scaleX.max > 0 && (
                 <text
                   x={width / 2}
-                  y={height - 25}  // Match EksplorasiDiagramPencar: chartHeight - 10, scaled 2.5x = 25
+                  y={height - 25}
                   textAnchor="middle"
-                  fontSize="36"  // Match EksplorasiDiagramPencar: 14, scaled 2.5x = 35-36
+                  fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
                 >
@@ -277,7 +277,7 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={50}  // Match EksplorasiDiagramPencar: 20, scaled 2.5x = 50
+                  x={50}
                   y={height / 2}
                   textAnchor="middle"
                   fontSize="36"
@@ -289,28 +289,26 @@ export default function PresentationView() {
                 </text>
               )}
 
-              {/* Scale numbers - INNER LAYER (between axis labels and chart) */}
+              {/* Scale numbers */}
               {data.scaleX.max > 0 && data.scaleY.max > 0 && (
                 <>
-                  {/* X-axis scale numbers */}
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleX.max / 5)).map((val) => (
                     <text
                       key={`x-${val}`}
                       x={scaleXFunc(val)}
-                      y={height - padding + 50}  // Match EksplorasiDiagramPencar: chartHeight - padding + 20, scaled 2.5x = 50
+                      y={height - padding + 50}
                       textAnchor="middle"
-                      fontSize="28"  // Match EksplorasiDiagramPencar: 11, scaled 2.5x = 27-28
+                      fontSize="28"
                       fill="#374151"
                     >
                       {Math.round(val)}
                     </text>
                   ))}
-                  {/* Y-axis scale numbers */}
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleY.max / 5)).map((val) => (
                     <text
                       key={`y-${val}`}
-                      x={padding - 50}  // Match EksplorasiDiagramPencar: padding - 20, scaled 2.5x = 50
-                      y={scaleYFunc(val) + 10}  // Match EksplorasiDiagramPencar: +4, scaled 2.5x = 10
+                      x={padding - 50}
+                      y={scaleYFunc(val) + 10}
                       textAnchor="middle"
                       fontSize="28"
                       fill="#374151"
