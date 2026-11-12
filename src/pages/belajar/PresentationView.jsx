@@ -266,9 +266,9 @@ export default function PresentationView() {
               {data.variableX && data.scaleX.max > 0 && (
                 <text
                   x={width / 2}
-                  y={height - 20}  // Adjusted position
+                  y={height - 15}  // Bottom label - positioned ABOVE scale numbers (which are at height-padding+50)
                   textAnchor="middle"
-                  fontSize="36"  // Increased from 14 to 36 (2.5x scale)
+                  fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
                 >
@@ -277,13 +277,13 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={40}  // Adjusted position
+                  x={30}  // Left label - positioned LEFT of scale numbers (which are at padding-50)
                   y={height / 2}
                   textAnchor="middle"
-                  fontSize="36"  // Increased from 14 to 36
+                  fontSize="36"
                   fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 40, ${height / 2})`}
+                  transform={`rotate(-90, 30, ${height / 2})`}
                 >
                   {data.variableY === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'} (0-{data.scaleY.max})
                 </text>
