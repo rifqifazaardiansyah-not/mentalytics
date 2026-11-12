@@ -211,8 +211,8 @@ export default function PresentationView() {
                         x2={scaleXFunc(val)}
                         y2={height - padding}
                         stroke="#e5e7eb"
-                        strokeWidth="1"
-                        strokeDasharray="4 2"
+                        strokeWidth="2"  // Increased from 1 to 2
+                        strokeDasharray="10 5"  // Increased from 4,2
                       />
                     </g>
                   ))}
@@ -224,8 +224,8 @@ export default function PresentationView() {
                         x2={width - padding}
                         y2={scaleYFunc(data.scaleY.max - val)}
                         stroke="#e5e7eb"
-                        strokeWidth="1"
-                        strokeDasharray="4 2"
+                        strokeWidth="2"  // Increased from 1 to 2
+                        strokeDasharray="10 5"  // Increased from 4,2
                       />
                     </g>
                   ))}
@@ -236,14 +236,14 @@ export default function PresentationView() {
               <line
                 x1={padding}
                 y1={height - padding}
-                x2={width - padding - 15}
+                x2={width - padding - 40}  // Increased from 15 to 40
                 y2={height - padding}
                 stroke="#1f2937"
-                strokeWidth="3"
+                strokeWidth="8"  // Increased from 3 to 8
               />
               {/* X-axis arrow → */}
               <polygon
-                points={`${width - padding - 15},${height - padding - 6} ${width - padding},${height - padding} ${width - padding - 15},${height - padding + 6}`}
+                points={`${width - padding - 40},${height - padding - 15} ${width - padding},${height - padding} ${width - padding - 40},${height - padding + 15}`}
                 fill="#1f2937"
               />
               
@@ -252,13 +252,13 @@ export default function PresentationView() {
                 x1={padding}
                 y1={height - padding}
                 x2={padding}
-                y2={padding + 15}
+                y2={padding + 40}  // Increased from 15 to 40
                 stroke="#1f2937"
-                strokeWidth="3"
+                strokeWidth="8"  // Increased from 3 to 8
               />
               {/* Y-axis arrow ↑ */}
               <polygon
-                points={`${padding - 6},${padding + 15} ${padding},${padding} ${padding + 6},${padding + 15}`}
+                points={`${padding - 15},${padding + 40} ${padding},${padding} ${padding + 15},${padding + 40}`}
                 fill="#1f2937"
               />
 
@@ -266,9 +266,9 @@ export default function PresentationView() {
               {data.variableX && data.scaleX.max > 0 && (
                 <text
                   x={width / 2}
-                  y={height - 10}
+                  y={height - 20}  // Adjusted position
                   textAnchor="middle"
-                  fontSize="14"
+                  fontSize="36"  // Increased from 14 to 36 (2.5x scale)
                   fill="#1f2937"
                   fontWeight="600"
                 >
@@ -277,13 +277,13 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={20}
+                  x={40}  // Adjusted position
                   y={height / 2}
                   textAnchor="middle"
-                  fontSize="14"
+                  fontSize="36"  // Increased from 14 to 36
                   fill="#1f2937"
                   fontWeight="600"
-                  transform={`rotate(-90, 20, ${height / 2})`}
+                  transform={`rotate(-90, 40, ${height / 2})`}
                 >
                   {data.variableY === 'bullying' ? 'Skor Bullying' : 'Skor Kecemasan'} (0-{data.scaleY.max})
                 </text>
@@ -296,9 +296,9 @@ export default function PresentationView() {
                     <text
                       key={`x-${val}`}
                       x={scaleXFunc(val)}
-                      y={height - padding + 20}
+                      y={height - padding + 50}  // Adjusted from 20 to 50
                       textAnchor="middle"
-                      fontSize="11"
+                      fontSize="28"  // Increased from 11 to 28
                       fill="#374151"
                     >
                       {Math.round(val)}
@@ -307,10 +307,10 @@ export default function PresentationView() {
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleY.max / 5)).map((val) => (
                     <text
                       key={`y-${val}`}
-                      x={padding - 20}
-                      y={scaleYFunc(val) + 4}
+                      x={padding - 50}  // Adjusted from 20 to 50
+                      y={scaleYFunc(val) + 10}  // Adjusted from 4 to 10
                       textAnchor="middle"
-                      fontSize="11"
+                      fontSize="28"  // Increased from 11 to 28
                       fill="#374151"
                     >
                       {Math.round(val)}
@@ -327,21 +327,21 @@ export default function PresentationView() {
                   x2={data.regressionLine.x2}
                   y2={data.regressionLine.y2}
                   stroke="#dc2626"
-                  strokeWidth="3"
-                  strokeDasharray="8,4"
+                  strokeWidth="8"  // Increased from 3 to 8 (thicker for visibility)
+                  strokeDasharray="20,10"  // Increased from 8,4 to 20,10
                 />
               )}
 
-              {/* Data points */}
+              {/* Data points - LARGER for 1600x1200 viewBox */}
               {data.inputtedPoints.map((point, idx) => (
                 <circle
                   key={idx}
                   cx={scaleXFunc(point.x)}
                   cy={scaleYFunc(point.y)}
-                  r="5"
+                  r="12"  // Increased from 5 to 12 (2.4x scale for 1600x1200 vs 600x600)
                   fill="#3b82f6"
                   stroke="#1e40af"
-                  strokeWidth="2"
+                  strokeWidth="4"  // Increased from 2 to 4
                 />
               ))}
             </svg>
