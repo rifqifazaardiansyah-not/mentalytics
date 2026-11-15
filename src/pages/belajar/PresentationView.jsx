@@ -282,7 +282,7 @@ export default function PresentationView() {
               )}
               {data.variableY && data.scaleY.max > 0 && (
                 <text
-                  x={40}
+                  x={20}
                   y={chartHeight / 2}
                   textAnchor="middle"
                   fontSize="36"
@@ -312,9 +312,9 @@ export default function PresentationView() {
                   {Array.from({ length: 6 }, (_, i) => i * (data.scaleY.max / 5)).map((val) => (
                     <text
                       key={`y-${val}`}
-                      x={padding - 50}
+                      x={padding + 35}
                       y={scaleYFunc(val) + 10}
-                      textAnchor="middle"
+                      textAnchor="start"
                       fontSize="28"
                       fill="#374151"
                     >
