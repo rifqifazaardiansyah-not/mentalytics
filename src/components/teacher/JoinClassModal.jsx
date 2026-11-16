@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, LogIn, Loader2 } from 'lucide-react'
 import { supabase } from '../../lib/supabaseClient'
+import { useToast } from '../ui/Toast'
 
 export default function JoinClassModal({ isOpen, onClose, teacherId, onClassJoined }) {
+  const toast = useToast()
   const [kodeKelas, setKodeKelas] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,8 +28,8 @@ export default function JoinClassModal({ isOpen, onClose, teacherId, onClassJoin
       if (data && data.length > 0) {
         const joinedClass = data[0]
         
-        // Show success message
-        alert(`✅ Berhasil bergabung ke kelas!\n\nKelas: ${joinedClass.nama_kelas}\nKode: ${joinedClass.kode_kelas}`)
+        // Show success message with Toast
+        toast.success(`Berhasil bergabung ke kelas ${joinedClass.nama_kelas}!`)
         
         // Reset form
         setKodeKelas('')
