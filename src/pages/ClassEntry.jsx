@@ -4,6 +4,7 @@ import { GraduationCap, UserPlus, Plus, ArrowRight, Loader2 } from 'lucide-react
 import { motion } from 'framer-motion'
 import MiloCharacter from '../components/milo/MiloCharacter'
 import MiloDialogBubble from '../components/milo/MiloDialogBubble'
+import StudentPasswordModal from '../components/StudentPasswordModal'
 import { supabase } from '../lib/supabaseClient'
 
 export default function ClassEntry() {
@@ -17,6 +18,12 @@ export default function ClassEntry() {
   })
   const [isJoining, setIsJoining] = useState(false)
   const [joinError, setJoinError] = useState(null)
+  
+  // Password Modal State
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordMode, setPasswordMode] = useState('login') // 'create' or 'login'
+  const [passwordError, setPasswordError] = useState(null)
+  const [pendingLoginData, setPendingLoginData] = useState(null)
 
   // Create Class State
   const [createData, setCreateData] = useState({
@@ -34,34 +41,106 @@ export default function ClassEntry() {
     setJoinError(null)
 
     try {
-      // Call join_class function
+      // Step 1: Verify student credentials (without password first)
       const { data, error } = await supabase
-        .rpc('join_class', {
+        .rpc('verify_student_login', {
+          p_nama: joinData.nama.trim(),
           p_kode_kelas: joinData.kodeKelas.trim().toUpperCase(),
-          p_nama_siswa: joinData.nama.trim()
+          p_password: null
         })
 
       if (error) throw error
 
       if (data && data.length > 0) {
-        const studentData = data[0]
+        const result = data[0]
         
-        // Store in localStorage
-        localStorage.setItem('mentalytics_student_id', studentData.siswa_id)
-        localStorage.setItem('mentalytics_kelas_id', studentData.kelas_id)
-        localStorage.setItem('mentalytics_student_name', studentData.nama_siswa)
-        localStorage.setItem('mentalytics_kode_kelas', studentData.kode_kelas)
-        localStorage.setItem('mentalytics_nama_kelas', studentData.nama_kelas)
-
-        // Force reload to reinitialize context
-        window.location.href = '/tap-milo'
+        if (result.password_valid && result.siswa_id) {
+          // Login successful - only from password modal submit
+          handleSuccessfulLogin(result)
+        } else if (result.needs_password) {
+          // Need to show password modal (all students now)
+          setPendingLoginData(result)
+          // Determine mode based on has_password flag:
+          // - has_password=TRUE → student exists with password → 'login' mode
+          // - has_password=FALSE + siswa_id=NULL → new student → 'create' mode
+          // - has_password=FALSE + siswa_id EXISTS → old student without password → 'login' mode
+          setPasswordMode(result.has_password ? 'login' : (result.siswa_id ? 'login' : 'create'))
+          setShowPasswordModal(true)
+          setIsJoining(false)
+        }
       }
     } catch (err) {
-      console.error('Error joining class:', err)
-      setJoinError(err.message || 'Gagal bergabung ke kelas. Pastikan kode kelas benar.')
-    } finally {
+      console.error('Error verifying student:', err)
+      setJoinError(err.message || 'Gagal memverifikasi data. Pastikan nama dan kode kelas benar.')
       setIsJoining(false)
     }
+  }
+
+  const handlePasswordSubmit = async (password) => {
+    setPasswordError(null)
+
+    try {
+      if (passwordMode === 'create') {
+        // Create new student with password
+        const { data, error } = await supabase
+          .rpc('set_student_password', {
+            p_nama: joinData.nama.trim(),
+            p_kode_kelas: joinData.kodeKelas.trim().toUpperCase(),
+            p_password: password
+          })
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          const result = data[0]
+          handleSuccessfulLogin({
+            siswa_id: result.siswa_id,
+            kelas_id: result.kelas_id,
+            nama_siswa: result.nama_siswa,
+            kode_kelas: result.kode_kelas,
+            nama_kelas: result.nama_kelas
+          })
+        }
+      } else {
+        // Login with password (including empty for old students)
+        const { data, error } = await supabase
+          .rpc('verify_student_login', {
+            p_nama: joinData.nama.trim(),
+            p_kode_kelas: joinData.kodeKelas.trim().toUpperCase(),
+            p_password: password === '' ? '' : password // Explicitly send empty string
+          })
+
+        if (error) throw error
+
+        if (data && data.length > 0) {
+          const result = data[0]
+          
+          if (result.password_valid && result.siswa_id) {
+            handleSuccessfulLogin(result)
+          } else {
+            setPasswordError('Password salah. Coba lagi atau hubungi guru untuk reset.')
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error with password:', err)
+      setPasswordError(err.message || 'Gagal memproses password. Silakan coba lagi.')
+    }
+  }
+
+  const handleSuccessfulLogin = (studentData) => {
+    // Store in localStorage
+    localStorage.setItem('mentalytics_student_id', studentData.siswa_id)
+    localStorage.setItem('mentalytics_kelas_id', studentData.kelas_id)
+    localStorage.setItem('mentalytics_student_name', studentData.nama_siswa)
+    localStorage.setItem('mentalytics_kode_kelas', studentData.kode_kelas)
+    localStorage.setItem('mentalytics_nama_kelas', studentData.nama_kelas)
+
+    // Close modal and redirect
+    setShowPasswordModal(false)
+    
+    // Force reload to reinitialize context
+    window.location.href = '/tap-milo'
   }
 
   const handleCreateClass = async (e) => {
@@ -178,7 +257,21 @@ export default function ClassEntry() {
 
   if (mode === 'join') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-100 via-primary-50 to-blue-50 flex items-center justify-center px-4">
+      <>
+        <StudentPasswordModal
+          isOpen={showPasswordModal}
+          mode={passwordMode}
+          studentName={joinData.nama}
+          onSubmit={handlePasswordSubmit}
+          onClose={() => {
+            setShowPasswordModal(false)
+            setPasswordError(null)
+            setIsJoining(false)
+          }}
+          error={passwordError}
+        />
+        
+        <div className="min-h-screen bg-gradient-to-br from-primary-100 via-primary-50 to-blue-50 flex items-center justify-center px-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -264,6 +357,7 @@ export default function ClassEntry() {
           </form>
         </motion.div>
       </div>
+      </>
     )
   }
 

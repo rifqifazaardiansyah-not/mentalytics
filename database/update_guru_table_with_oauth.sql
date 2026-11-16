@@ -104,7 +104,7 @@ BEGIN
             v_username := LOWER(SPLIT_PART(p_email, '@', 1));
             
             -- Ensure username is unique
-            WHILE EXISTS (SELECT 1 FROM guru WHERE username = v_username) LOOP
+            WHILE EXISTS (SELECT 1 FROM guru WHERE guru.username = v_username) LOOP
                 v_username := v_username || floor(random() * 1000)::text;
             END LOOP;
             
