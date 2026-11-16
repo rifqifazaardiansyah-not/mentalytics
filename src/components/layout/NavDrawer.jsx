@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { X, Home, BookOpen, Users, Sparkles, ChevronDown, ChevronUp, Hand, Heart, GraduationCap, School, LogOut } from 'lucide-react'
+import { X, Home, BookOpen, Users, Sparkles, ChevronDown, ChevronUp, Hand, Heart, GraduationCap, School, LogOut, UserCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useContext } from 'react'
 import { StudentContext } from '../../context/StudentContext'
@@ -20,6 +20,7 @@ export default function NavDrawer({ isOpen, onClose }) {
     { path: '/panduan', label: 'Panduan', icon: BookOpen },
     { path: '/about', label: 'About Us', icon: Users },
     { path: '/kelas', label: 'Kelas', icon: School },
+    { path: '/teacher/login', label: 'Dashboard Guru', icon: UserCircle, external: true },
   ]
 
   const tapMiloSubmenu = [

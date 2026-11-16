@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom'
 import App from './App'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedTeacherRoute from './components/ProtectedTeacherRoute'
 
 // Pages - Will be created progressively
 import ClassEntry from './pages/ClassEntry'
@@ -10,6 +11,16 @@ import AboutUs from './pages/AboutUs'
 import TapMilo from './pages/TapMilo'
 import TentangMilo from './pages/TentangMilo'
 import Motivasi from './pages/Motivasi'
+
+// Teacher pages
+import TeacherLogin from './pages/teacher/TeacherLogin'
+import TeacherRegister from './pages/teacher/TeacherRegister'
+import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import GoogleCallback from './pages/teacher/GoogleCallback'
+import DataSiswa from './pages/teacher/DataSiswa'
+import HasilSurvei from './pages/teacher/HasilSurvei'
+import StatistikKelas from './pages/teacher/StatistikKelas'
+import ProgressBelajar from './pages/teacher/ProgressBelajar'
 
 // Learning pages
 import KegiatanBelajar from './pages/belajar/KegiatanBelajar'
@@ -41,6 +52,18 @@ const router = createBrowserRouter([
       { path: 'panduan', element: <Panduan /> },
       { path: 'about', element: <AboutUs /> },
       { path: 'kelas', element: <ClassEntry /> },
+      
+      // Teacher routes - public login/register
+      { path: 'teacher/login', element: <TeacherLogin /> },
+      { path: 'teacher/register', element: <TeacherRegister /> },
+      { path: 'teacher/google-callback', element: <GoogleCallback /> },
+      
+      // Teacher dashboard - protected
+      { path: 'dashboard-guru', element: <ProtectedTeacherRoute><TeacherDashboard /></ProtectedTeacherRoute> },
+      { path: 'dashboard-guru/students', element: <ProtectedTeacherRoute><DataSiswa /></ProtectedTeacherRoute> },
+      { path: 'dashboard-guru/surveys', element: <ProtectedTeacherRoute><HasilSurvei /></ProtectedTeacherRoute> },
+      { path: 'dashboard-guru/statistics', element: <ProtectedTeacherRoute><StatistikKelas /></ProtectedTeacherRoute> },
+      { path: 'dashboard-guru/progress', element: <ProtectedTeacherRoute><ProgressBelajar /></ProtectedTeacherRoute> },
       
       // Protected routes - require class membership
       { path: 'tap-milo', element: <ProtectedRoute><TapMilo /></ProtectedRoute> },
