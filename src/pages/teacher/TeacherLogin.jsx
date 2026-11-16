@@ -70,10 +70,15 @@ export default function TeacherLogin() {
     setLoadingGoogle(true)
 
     try {
+      // Auto-detect production or development
+      const redirectUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5173/teacher/google-callback'
+        : 'https://mentalytics-milo.my.id/teacher/google-callback'
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/teacher/google-callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
