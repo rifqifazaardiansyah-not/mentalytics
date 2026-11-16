@@ -4,6 +4,7 @@ import { TeacherContext } from '../../context/TeacherContext'
 import { supabase } from '../../lib/supabaseClient'
 import { useToast } from '../../components/ui/Toast'
 import StudentDetailModal from '../../components/teacher/StudentDetailModal'
+import ManageStudentPasswordModal from '../../components/teacher/ManageStudentPasswordModal'
 import { 
   Users, 
   Search, 
@@ -15,7 +16,8 @@ import {
   Eye,
   BarChart3,
   ArrowLeft,
-  ChevronDown
+  ChevronDown,
+  Key
 } from 'lucide-react'
 
 export default function DataSiswa() {
@@ -29,6 +31,8 @@ export default function DataSiswa() {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showFilterDropdown, setShowFilterDropdown] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [selectedStudentForPassword, setSelectedStudentForPassword] = useState(null)
 
   useEffect(() => {
     if (kelasId) {
@@ -78,6 +82,14 @@ export default function DataSiswa() {
           const hasSurvey = (surveyCount || 0) > 0
           const hasSolution = (solutionCount || 0) > 0
 
+          // Check if student has password
+          const { data: passwordData } = await supabase
+            .rpc('check_student_has_password', {
+              p_siswa_id: student.id
+            })
+          
+          const has_password = passwordData && passwordData.length > 0 ? passwordData[0].has_password : false
+
           let status = 'not-started'
           let progress = 0
 
@@ -98,6 +110,7 @@ export default function DataSiswa() {
             status,
             progress,
             hasEQ,
+            has_password,
             hasSurvey,
             hasSolution
           }
@@ -112,6 +125,20 @@ export default function DataSiswa() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleManagePassword = (student) => {
+    setSelectedStudentForPassword({
+      id: student.id,
+      nama: student.nama,
+      has_password: student.has_password
+    })
+    setShowPasswordModal(true)
+  }
+
+  const handlePasswordSuccess = () => {
+    toast.success('Password berhasil dikelola')
+    loadStudents() // Reload to get updated password status
   }
 
   // Filter students based on search and status
@@ -503,16 +530,30 @@ export default function DataSiswa() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => {
-                          setSelectedStudent(student)
-                          setShowDetailModal(true)
-                        }}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Lihat Detail
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedStudent(student)
+                            setShowDetailModal(true)
+                          }}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Lihat Detail
+                        </button>
+                        <button
+                          onClick={() => handleManagePassword(student)}
+                          className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
+                            student.has_password
+                              ? 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                              : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                          }`}
+                          title={student.has_password ? 'Siswa sudah punya password' : 'Siswa belum punya password'}
+                        >
+                          <Key className="w-4 h-4" />
+                          Password
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -530,6 +571,17 @@ export default function DataSiswa() {
           setSelectedStudent(null)
         }}
         student={selectedStudent}
+      />
+
+      {/* Password Management Modal */}
+      <ManageStudentPasswordModal
+        isOpen={showPasswordModal}
+        student={selectedStudentForPassword}
+        onClose={() => {
+          setShowPasswordModal(false)
+          setSelectedStudentForPassword(null)
+        }}
+        onSuccess={handlePasswordSuccess}
       />
     </div>
   )
